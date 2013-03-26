@@ -1,0 +1,16 @@
+{
+    "name": "brackets-registry",
+    "description": "node.js-powered server for registering Brackets extensions.",
+    "version": "0.23.0",
+    "homepage": "http://brackets.io",
+    "license": "MIT",
+    "issues": {
+        "url": "http://github.com/adobe/brackets-registry/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/adobe/brackets-registry.git",
+        "branch": "",
+        "SHA": ""
+    }
+}

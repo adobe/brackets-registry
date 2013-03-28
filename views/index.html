@@ -1,6 +1,9 @@
 {{#if user}}
     <h2>Welcome, {{user}}!</h2>
-    <p><a href="#">Upload a file (not implemented yet)</a></p>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        Upload a package: <input type="file" name="extensionPackage" size="40">
+        <input type="submit" value="Upload">
+    </form>
     <p><a href="/logout">Sign out</a></p>
 {{else}}
     <h2>Welcome to the Brackets Extension Registry!</h2>

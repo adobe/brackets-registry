@@ -5,7 +5,8 @@
   "homepage": "http://brackets.io",
   "license": "MIT",
   "scripts": {
-    "start": "node app"
+    "start": "node app",
+    "test": "jasmine-node spec"
   },
   "issues": {
     "url": "http://github.com/adobe/brackets-registry/issues"

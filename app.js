@@ -56,9 +56,7 @@ passport.deserializeUser(function (registryUserId, done) {
 });
 
 // Set up the GitHub authentication strategy. The registry user id
-// is just "github:" plus the user's GitHub id. (We use this instead of
-// the username since usernames can change.)
-// *** TODO: is that right?
+// is just "github:" plus the user's GitHub username.
 passport.use(
     new GitHubStrategy(
         {
@@ -67,7 +65,7 @@ passport.use(
             callbackURL: "https://" + config.hostname + ":" + config.port + "/auth/github/callback" // *** TODO: real callback URL
         },
         function (accessToken, refreshToken, profile, done) {
-            done(null, "github:" + profile.id);
+            done(null, "github:" + profile.username);
         }
     )
 );

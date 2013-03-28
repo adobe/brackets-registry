@@ -49,6 +49,12 @@ describe("Repository", function () {
         repository.__set__("validate", originalValidate);
     });
     
+    function setValidationResult(result) {
+        repository.__set__("validate", function (path, options, callback) {
+            callback(null, result);
+        });
+    }
+    
     it("should be able to add a valid package", function (done) {
         repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
             expect(err).toEqual(null);
@@ -65,7 +71,7 @@ describe("Repository", function () {
     });
     
     it("should verify ownership before allowing action for a package", function (done) {
-        repository.addPackage(basicValidExtension, "github:adobe", function (err, metadata) {
+        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
             repository.addPackage(basicValidExtension, "github:someonewhowedontknowandshouldnthaveaccess", function (err, metadata) {
                 expect(err.message).toEqual("NOT_AUTHORIZED");
                 done();
@@ -74,18 +80,49 @@ describe("Repository", function () {
     });
     
     it("should not get tripped up by JS object properties", function (done) {
-        repository.__set__("validate", function (path, options, callback) {
-            callback(null, {
-                metadata: {
-                    name: "constructor",
-                    version: "1.0.0"
-                }
-            });
+        setValidationResult({
+            metadata: {
+                name: "constructor",
+                version: "1.0.0"
+            }
         });
         
-        repository.addPackage("nopackage.zip", "github:adobe", function (err, metadata) {
+        repository.addPackage("nopackage.zip", "github:adobe", function (err, entry) {
             expect(err).toBeNull();
             done();
+        });
+    });
+    
+    it("should handle good version upgrades", function (done) {
+        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+            setValidationResult({
+                metadata: {
+                    name: "basic-valid-extension",
+                    version: "2.0.0"
+                }
+            });
+            
+            repository.addPackage("nopackage.zip", "github:adobe", function (err, entry) {
+                expect(entry.versions.length).toEqual(2);
+                expect(entry.versions[1].version).toEqual("2.0.0");
+                done();
+            });
+        });
+    });
+    
+    it("should reject versions that are not higher than the previous version", function (done) {
+        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+            setValidationResult({
+                metadata: {
+                    name: "basic-valid-extension",
+                    version: "0.9.9"
+                }
+            });
+            
+            repository.addPackage("nopackage.zip", "github:adobe", function (err, entry) {
+                expect(err.message).toEqual("BAD_VERSION");
+                done();
+            });
         });
     });
 });

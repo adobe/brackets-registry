@@ -1,16 +1,28 @@
 {
-    "name": "brackets-registry",
-    "description": "node.js-powered server for registering Brackets extensions.",
-    "version": "0.23.0",
-    "homepage": "http://brackets.io",
-    "license": "MIT",
-    "issues": {
-        "url": "http://github.com/adobe/brackets-registry/issues"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/adobe/brackets-registry.git",
-        "branch": "",
-        "SHA": ""
-    }
+  "name": "brackets-registry",
+  "description": "node.js-powered server for registering Brackets extensions.",
+  "version": "0.23.0",
+  "homepage": "http://brackets.io",
+  "license": "MIT",
+  "scripts": {
+    "start": "node app"
+  },
+  "issues": {
+    "url": "http://github.com/adobe/brackets-registry/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe/brackets-registry.git",
+    "branch": "",
+    "SHA": ""
+  },
+  "dependencies": {
+    "express": "~3.1.0",
+    "hbs": "~2.1.0",
+    "passport": "~0.1.16",
+    "passport-github": "~0.1.3"
+  },
+  "devDependencies": {
+    "jasmine-node": "~1.4.0"
+  }
 }

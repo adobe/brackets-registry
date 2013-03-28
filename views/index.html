@@ -1,0 +1,8 @@
+{{#if user}}
+    <h2>Welcome, {{user}}!</h2>
+    <p><a href="#">Upload a file (not implemented yet)</a></p>
+    <p><a href="/logout">Sign out</a></p>
+{{else}}
+    <h2>Welcome to the Brackets Extension Registry!</h2>
+    <p>To upload an extension, you must first <a href="/auth/github">sign in via GitHub</a>.</p>
+{{/if}}

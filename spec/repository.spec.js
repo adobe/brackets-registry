@@ -28,11 +28,14 @@ indent: 4, maxerr: 50 */
 
 "use strict";
 
-var repository = require("../lib/repository"),
+var rewire     = require("rewire"),
+    repository = rewire("../lib/repository"),
     path       = require("path");
 
 var testPackageDirectory = path.join(path.dirname(module.filename), "data"),
     basicValidExtension  = path.join(testPackageDirectory, "basic-valid-extension.zip");
+
+var originalValidate = repository.__get__("validate");
 
 describe("Repository", function () {
     beforeEach(function () {
@@ -40,6 +43,10 @@ describe("Repository", function () {
         Object.keys(repository._metadata).forEach(function (key) {
             delete repository._metadata[key];
         });
+    });
+    
+    afterEach(function () {
+        repository.__set__("validate", originalValidate);
     });
     
     it("should be able to add a valid package", function (done) {
@@ -63,6 +70,22 @@ describe("Repository", function () {
                 expect(err.message).toEqual("NOT_AUTHORIZED");
                 done();
             });
+        });
+    });
+    
+    it("should not get tripped up by JS object properties", function (done) {
+        repository.__set__("validate", function (path, options, callback) {
+            callback(null, {
+                metadata: {
+                    name: "constructor",
+                    version: "1.0.0"
+                }
+            });
+        });
+        
+        repository.addPackage("nopackage.zip", "github:adobe", function (err, metadata) {
+            expect(err).toBeNull();
+            done();
         });
     });
 });

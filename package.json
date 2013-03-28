@@ -24,6 +24,7 @@
     "brackets-extensibility": "~0.23.0"
   },
   "devDependencies": {
-    "jasmine-node": "~1.4.0"
+    "jasmine-node": "~1.4.0",
+    "rewire": "~1.1.2"
   }
 }

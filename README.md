@@ -1,4 +1,4 @@
-## Brackets Extension Registry
+## Brackets Extension Registry [![Build Status](https://travis-ci.org/adobe/brackets-registry.png?branch=master)](https://travis-ci.org/adobe/brackets-registry)
 
 A node.js-powered registry for Brackets extensions.
 

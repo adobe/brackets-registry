@@ -24,7 +24,7 @@
 
 /*jslint vars: true, plusplus: true, devel: true, node: true, nomen: true,
 indent: 4, maxerr: 50 */
-/*global expect, describe, it */
+/*global expect, describe, it, beforeEach, afterEach */
 
 "use strict";
 
@@ -35,11 +35,34 @@ var testPackageDirectory = path.join(path.dirname(module.filename), "data"),
     basicValidExtension  = path.join(testPackageDirectory, "basic-valid-extension.zip");
 
 describe("Repository", function () {
+    beforeEach(function () {
+        // Clear the repository
+        Object.keys(repository._metadata).forEach(function (key) {
+            delete repository._metadata[key];
+        });
+    });
+    
     it("should be able to add a valid package", function (done) {
-        repository.addPackage(basicValidExtension, function (err, metadata) {
+        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
             expect(err).toEqual(null);
-            expect(metadata.name).toEqual("basic-valid-extension");
+            expect(entry.metadata.name).toEqual("basic-valid-extension");
+            
+            var registered = repository._metadata["basic-valid-extension"];
+            expect(registered).toBeDefined();
+            expect(registered.metadata.name).toEqual("basic-valid-extension");
+            expect(registered.owner).toEqual("github:adobe");
+            expect(registered.versions.length).toEqual(1);
+            expect(registered.versions[0].version).toEqual("1.0.0");
             done();
+        });
+    });
+    
+    it("should verify ownership before allowing action for a package", function (done) {
+        repository.addPackage(basicValidExtension, "github:adobe", function (err, metadata) {
+            repository.addPackage(basicValidExtension, "github:someonewhowedontknowandshouldnthaveaccess", function (err, metadata) {
+                expect(err.message).toEqual("NOT_AUTHORIZED");
+                done();
+            });
         });
     });
 });

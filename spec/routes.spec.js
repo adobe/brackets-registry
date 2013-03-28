@@ -26,9 +26,9 @@
 
 "use strict";
 
-var Routes = require("../lib/Routes");
+var routes = require("../lib/routes");
 
-describe("Routes", function () {
+describe("routes", function () {
     var req, res;
     
     beforeEach(function () {
@@ -38,13 +38,13 @@ describe("Routes", function () {
     
     it("should redirect to home page on successful authentication", function () {
         res.redirect = jasmine.createSpy();
-        Routes._authCallback(req, res);
+        routes._authCallback(req, res);
         expect(res.redirect).toHaveBeenCalledWith("/");
     });
     
     it("should render and inject correct data into the home page when user is not authenticated", function () {
         res.render = jasmine.createSpy();
-        Routes._index(req, res);
+        routes._index(req, res);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("index");
         expect(res.render.mostRecentCall.args[1].user).toBeUndefined();
@@ -53,7 +53,7 @@ describe("Routes", function () {
     it("should render and inject correct data into the home page when user is authenticated", function () {
         req.user = "github:someuser";
         res.render = jasmine.createSpy();
-        Routes._index(req, res);
+        routes._index(req, res);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("index");
         expect(res.render.mostRecentCall.args[1].user).toBe("github:someuser");
@@ -62,14 +62,14 @@ describe("Routes", function () {
     it("should logout and redirect to home page when logging out", function () {
         req.logout = jasmine.createSpy();
         res.redirect = jasmine.createSpy();
-        Routes._logout(req, res);
+        routes._logout(req, res);
         expect(req.logout).toHaveBeenCalled();
         expect(res.redirect).toHaveBeenCalledWith("/");
     });
     
     it("should render failure page if auth failed", function () {
         res.render = jasmine.createSpy();
-        Routes._authFailed(req, res);
+        routes._authFailed(req, res);
         expect(res.render).toHaveBeenCalledWith("authFailed");
     });
 });

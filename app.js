@@ -33,7 +33,7 @@ var express = require("express"),
     https = require("https"),
     passport = require("passport"),
     GitHubStrategy = require("passport-github").Strategy,
-    Routes = require("./lib/Routes");
+    routes = require("./lib/routes");
 
 // Load cert and secret configuration
 var key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key")),
@@ -91,7 +91,7 @@ app.configure(function () {
 });
 
 // Set up routes
-Routes.setup(app);
+routes.setup(app);
 
 // Start the HTTPS server
 https.createServer({key: key, cert: cert}, app).listen(config.port);

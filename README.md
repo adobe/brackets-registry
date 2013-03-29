@@ -4,7 +4,7 @@ A node.js-powered registry for Brackets extensions.
 
 ## Setup
 
-1. `npm install deps/* && npm install`
+1. `npm install`
 2. Create a "config" folder at the top level. (This will be ignored by git.)
 3. In the "config" folder, put your SSL cert or [create a self-signed cert][1].
    The key should be in "certificate.key" and the cert should be in "certificate.cert".

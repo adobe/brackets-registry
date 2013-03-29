@@ -2,9 +2,5 @@ language: node_js
 node_js:
   - "0.8"
 
-install:
-  - npm install deps/*
-  - npm install
-  
 script:
   - npm test

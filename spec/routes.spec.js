@@ -173,4 +173,17 @@ describe("routes", function () {
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
         expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NO_FILE");
     });
+    
+    it("should render upload failure page with error immediately (without hitting registry) if user is not logged in", function () {
+        req.files = {
+            extensionPackage: {
+                path: "/path/to/extension.zip",
+                size: 1000
+            }
+        };
+        routes._upload(req, res);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NOT_LOGGED_IN");
+    });
 });

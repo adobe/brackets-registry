@@ -5,6 +5,7 @@
   "homepage": "http://brackets.io",
   "license": "MIT",
   "scripts": {
+    "preinstall": "npm install deps/*",
     "start": "node app",
     "test": "jasmine-node spec"
   },

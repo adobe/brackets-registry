@@ -127,4 +127,26 @@ describe("Repository", function () {
             });
         });
     });
+    
+    it("should reject packages with validation errors", function (done) {
+        setValidationResult({
+            errors: [
+                ["BAD_PACKAGE_NAME", "foo@bar"],
+                ["INVALID_VERSION_NUMBER", "x.231.aaa", "nopackage.zip"]
+            ],
+            metadata: {
+                name: "foo@bar",
+                version: "x.231.aaa"
+            }
+        });
+        
+        repository.addPackage("nopackage.zip", username, function (err, entry) {
+            expect(err).not.toBeNull();
+            expect(err.message).toEqual("VALIDATION_FAILED");
+            expect(err.errors.length).toEqual(2);
+            expect(err.errors[0][0]).toEqual("BAD_PACKAGE_NAME");
+            expect(err.errors[1][0]).toEqual("INVALID_VERSION_NUMBER");
+            done();
+        });
+    });
 });

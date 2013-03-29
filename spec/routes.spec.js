@@ -133,7 +133,7 @@ describe("routes", function () {
         routes._upload(req, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
-            err = "NOT_AUTHORIZED";
+            err = new Error("NOT_AUTHORIZED");
         callback(err, null);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
@@ -151,7 +151,8 @@ describe("routes", function () {
         routes._upload(req, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
-            err = ["MISSING_PACKAGE_NAME", "MISSING_PACKAGE_VERSION"];
+            err = new Error("VALIDATION_FAILED");
+        err.errors = ["MISSING_PACKAGE_NAME", "MISSING_PACKAGE_VERSION"];
         callback(err, null);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");

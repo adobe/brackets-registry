@@ -98,11 +98,13 @@ describe("Repository", function () {
             setValidationResult({
                 metadata: {
                     name: "basic-valid-extension",
+                    description: "Less basic than before",
                     version: "2.0.0"
                 }
             });
             
             repository.addPackage("nopackage.zip", username, function (err, entry) {
+                expect(entry.metadata.description).toEqual("Less basic than before");
                 expect(entry.versions.length).toEqual(2);
                 expect(entry.versions[1].version).toEqual("2.0.0");
                 done();

@@ -40,9 +40,7 @@ var originalValidate = repository.__get__("validate");
 describe("Repository", function () {
     beforeEach(function () {
         // Clear the repository
-        Object.keys(repository._metadata).forEach(function (key) {
-            delete repository._metadata[key];
-        });
+        repository.__set__("registry", {});
     });
     
     afterEach(function () {
@@ -62,7 +60,7 @@ describe("Repository", function () {
             expect(err).toEqual(null);
             expect(entry.metadata.name).toEqual("basic-valid-extension");
             
-            var registered = repository._metadata["basic-valid-extension"];
+            var registered = repository.__get__("registry")["basic-valid-extension"];
             expect(registered).toBeDefined();
             expect(registered.metadata.name).toEqual("basic-valid-extension");
             expect(registered.owner).toEqual(username);
@@ -100,11 +98,13 @@ describe("Repository", function () {
             setValidationResult({
                 metadata: {
                     name: "basic-valid-extension",
+                    description: "Less basic than before",
                     version: "2.0.0"
                 }
             });
             
             repository.addPackage("nopackage.zip", username, function (err, entry) {
+                expect(entry.metadata.description).toEqual("Less basic than before");
                 expect(entry.versions.length).toEqual(2);
                 expect(entry.versions[1].version).toEqual("2.0.0");
                 done();
@@ -125,6 +125,28 @@ describe("Repository", function () {
                 expect(err.message).toEqual("BAD_VERSION");
                 done();
             });
+        });
+    });
+    
+    it("should reject packages with validation errors", function (done) {
+        setValidationResult({
+            errors: [
+                ["BAD_PACKAGE_NAME", "foo@bar"],
+                ["INVALID_VERSION_NUMBER", "x.231.aaa", "nopackage.zip"]
+            ],
+            metadata: {
+                name: "foo@bar",
+                version: "x.231.aaa"
+            }
+        });
+        
+        repository.addPackage("nopackage.zip", username, function (err, entry) {
+            expect(err).not.toBeNull();
+            expect(err.message).toEqual("VALIDATION_FAILED");
+            expect(err.errors.length).toEqual(2);
+            expect(err.errors[0][0]).toEqual("BAD_PACKAGE_NAME");
+            expect(err.errors[1][0]).toEqual("INVALID_VERSION_NUMBER");
+            done();
         });
     });
 });

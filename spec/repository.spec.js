@@ -55,15 +55,17 @@ describe("Repository", function () {
         });
     }
     
+    var username = "github:reallyreallyfakeuser";
+    
     it("should be able to add a valid package", function (done) {
-        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
             expect(err).toEqual(null);
             expect(entry.metadata.name).toEqual("basic-valid-extension");
             
             var registered = repository._metadata["basic-valid-extension"];
             expect(registered).toBeDefined();
             expect(registered.metadata.name).toEqual("basic-valid-extension");
-            expect(registered.owner).toEqual("github:adobe");
+            expect(registered.owner).toEqual(username);
             expect(registered.versions.length).toEqual(1);
             expect(registered.versions[0].version).toEqual("1.0.0");
             done();
@@ -71,7 +73,7 @@ describe("Repository", function () {
     });
     
     it("should verify ownership before allowing action for a package", function (done) {
-        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
             repository.addPackage(basicValidExtension, "github:someonewhowedontknowandshouldnthaveaccess", function (err, metadata) {
                 expect(err.message).toEqual("NOT_AUTHORIZED");
                 done();
@@ -87,14 +89,14 @@ describe("Repository", function () {
             }
         });
         
-        repository.addPackage("nopackage.zip", "github:adobe", function (err, entry) {
+        repository.addPackage("nopackage.zip", username, function (err, entry) {
             expect(err).toBeNull();
             done();
         });
     });
     
     it("should handle good version upgrades", function (done) {
-        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
             setValidationResult({
                 metadata: {
                     name: "basic-valid-extension",
@@ -102,7 +104,7 @@ describe("Repository", function () {
                 }
             });
             
-            repository.addPackage("nopackage.zip", "github:adobe", function (err, entry) {
+            repository.addPackage("nopackage.zip", username, function (err, entry) {
                 expect(entry.versions.length).toEqual(2);
                 expect(entry.versions[1].version).toEqual("2.0.0");
                 done();
@@ -111,7 +113,7 @@ describe("Repository", function () {
     });
     
     it("should reject versions that are not higher than the previous version", function (done) {
-        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
             setValidationResult({
                 metadata: {
                     name: "basic-valid-extension",
@@ -119,7 +121,7 @@ describe("Repository", function () {
                 }
             });
             
-            repository.addPackage("nopackage.zip", "github:adobe", function (err, entry) {
+            repository.addPackage("nopackage.zip", username, function (err, entry) {
                 expect(err.message).toEqual("BAD_VERSION");
                 done();
             });

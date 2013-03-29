@@ -87,7 +87,8 @@ describe("routes", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
-                path: "/path/to/extension.zip"
+                path: "/path/to/extension.zip",
+                size: 1000
             }
         };
         routes._upload(req, res);
@@ -100,7 +101,8 @@ describe("routes", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
-                path: "/path/to/extension.zip"
+                path: "/path/to/extension.zip",
+                size: 1000
             }
         };
         routes._upload(req, res);
@@ -124,7 +126,8 @@ describe("routes", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
-                path: "/path/to/extension.zip"
+                path: "/path/to/extension.zip",
+                size: 1000
             }
         };
         routes._upload(req, res);
@@ -141,7 +144,8 @@ describe("routes", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
-                path: "/path/to/extension.zip"
+                path: "/path/to/extension.zip",
+                size: 1000
             }
         };
         routes._upload(req, res);

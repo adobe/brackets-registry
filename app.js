@@ -42,6 +42,7 @@ var key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key")),
 
 config.hostname = config.hostname || "localhost";
 config.port = config.port || 4040;
+config.storage = config.storage || "./ramstorage.js";
 
 // Set up Passport for authentication
 

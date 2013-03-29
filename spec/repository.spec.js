@@ -40,7 +40,9 @@ var originalValidate = repository.__get__("validate");
 describe("Repository", function () {
     beforeEach(function () {
         // Clear the repository
-        repository.__set__("registry", {});
+        repository.configure({
+            storage: "./ramstorage"
+        });
     });
     
     afterEach(function () {
@@ -54,6 +56,14 @@ describe("Repository", function () {
     }
     
     var username = "github:reallyreallyfakeuser";
+
+    it("should fail with no configuration", function (done) {
+        repository.__set__("config", null);
+        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+            expect(err.message).toEqual("Repository not configured!");
+            done();
+        });
+    });
     
     it("should be able to add a valid package", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
@@ -66,7 +76,13 @@ describe("Repository", function () {
             expect(registered.owner).toEqual(username);
             expect(registered.versions.length).toEqual(1);
             expect(registered.versions[0].version).toEqual("1.0.0");
-            done();
+            
+            var storage = repository.__get__("storage");
+            storage.getRegistry(function (err, storedRegistry) {
+                var registered2 = storedRegistry["basic-valid-extension"];
+                expect(registered2.metadata.name).toEqual(registered.metadata.name);
+                done();
+            });
         });
     });
     
@@ -146,6 +162,14 @@ describe("Repository", function () {
             expect(err.errors.length).toEqual(2);
             expect(err.errors[0][0]).toEqual("BAD_PACKAGE_NAME");
             expect(err.errors[1][0]).toEqual("INVALID_VERSION_NUMBER");
+            done();
+        });
+    });
+    
+    it("should return an error if the registry is not loaded", function (done) {
+        repository.__set__("registry", null);
+        repository.addPackage("nopackage.zip", username, function (err, entry) {
+            expect(err.message).toEqual("REGISTRY_NOT_LOADED");
             done();
         });
     });

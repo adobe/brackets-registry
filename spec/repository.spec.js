@@ -78,6 +78,8 @@ describe("Repository", function () {
             expect(registered.versions[0].version).toEqual("1.0.0");
             
             var storage = repository.__get__("storage");
+            expect(storage.files["basic-valid-extension/1.0.0.zip"]).toEqual(basicValidExtension);
+            
             storage.getRegistry(function (err, storedRegistry) {
                 var registered2 = storedRegistry["basic-valid-extension"];
                 expect(registered2.metadata.name).toEqual(registered.metadata.name);

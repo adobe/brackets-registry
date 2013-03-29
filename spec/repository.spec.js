@@ -40,9 +40,7 @@ var originalValidate = repository.__get__("validate");
 describe("Repository", function () {
     beforeEach(function () {
         // Clear the repository
-        Object.keys(repository._metadata).forEach(function (key) {
-            delete repository._metadata[key];
-        });
+        repository.__set__("registry", {});
     });
     
     afterEach(function () {
@@ -62,7 +60,7 @@ describe("Repository", function () {
             expect(err).toEqual(null);
             expect(entry.metadata.name).toEqual("basic-valid-extension");
             
-            var registered = repository._metadata["basic-valid-extension"];
+            var registered = repository.__get__("registry")["basic-valid-extension"];
             expect(registered).toBeDefined();
             expect(registered.metadata.name).toEqual("basic-valid-extension");
             expect(registered.owner).toEqual(username);

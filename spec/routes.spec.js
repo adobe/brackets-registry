@@ -31,6 +31,10 @@ var rewire = require("rewire"),
 
 var repository = routes.__get__("repository");
 
+// Don't map the keys to human-readable strings.
+routes.__set__("_mapError", function (key) { return key; });
+routes.__set__("_formatError", function (err) { return err; });
+
 describe("routes", function () {
     var req, res, mockRepository;
     
@@ -137,10 +141,10 @@ describe("routes", function () {
         callback(err, null);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
-        expect(res.render.mostRecentCall.args[1].err).toBeDefined();
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NOT_AUTHORIZED");
     });
 
-    it("should render upload failure page with at least one error if upload failed and there are multiple errors", function () {
+    it("should render upload failure page if upload failed and there are multiple errors", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
@@ -152,11 +156,13 @@ describe("routes", function () {
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("VALIDATION_FAILED");
-        err.errors = ["MISSING_PACKAGE_NAME", "MISSING_PACKAGE_VERSION"];
+        err.errors = [["MISSING_PACKAGE_NAME", "/path/to/extension.zip"], ["INVALID_VERSION_NUMBER", "x.y.z"]];
         callback(err, null);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
-        expect(res.render.mostRecentCall.args[1].err).toBeDefined();
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("VALIDATION_FAILED");
+        expect(res.render.mostRecentCall.args[1].errors[1]).toEqual(["MISSING_PACKAGE_NAME", "/path/to/extension.zip"]);
+        expect(res.render.mostRecentCall.args[1].errors[2]).toEqual(["INVALID_VERSION_NUMBER", "x.y.z"]);
     });
 
     it("should render upload failure page with error if no file is received", function () {
@@ -165,6 +171,19 @@ describe("routes", function () {
         routes._upload(req, res);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
-        expect(res.render.mostRecentCall.args[1].err).toBeDefined();
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NO_FILE");
+    });
+    
+    it("should render upload failure page with error immediately (without hitting registry) if user is not logged in", function () {
+        req.files = {
+            extensionPackage: {
+                path: "/path/to/extension.zip",
+                size: 1000
+            }
+        };
+        routes._upload(req, res);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NOT_LOGGED_IN");
     });
 });

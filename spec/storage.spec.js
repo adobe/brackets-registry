@@ -30,7 +30,12 @@ indent: 4, maxerr: 50 */
 
 var rewire    = require("rewire"),
     s3storage = rewire("../lib/s3storage"),
-    zlib      = require("zlib");
+    zlib      = require("zlib"),
+    stream    = require("stream"),
+    path      = require("path");
+
+var testPackageDirectory = path.join(path.dirname(module.filename), "data"),
+    basicValidExtension  = path.join(testPackageDirectory, "basic-valid-extension.zip");
 
 var AWS;
 var config = {
@@ -207,5 +212,36 @@ describe("S3 Storage", function () {
         };
         
         storage.saveRegistry(sampleRegistry);
+    });
+    
+    it("should save packages to S3", function (done) {
+        var storage = new s3storage.Storage(config);
+        
+        AWS.S3 = {
+            Client: function (options) {
+                this.putObject = function (params, callback) {
+                    expect(params).toEqual({
+                        Bucket: "repository.brackets.io",
+                        Key: "basic-valid-extension/1.0.0.zip",
+                        ACL: "public-read",
+                        ContentType: "application/zip",
+                        Body: jasmine.any(stream.Stream)
+                    });
+                    done();
+                };
+            }
+        };
+        
+        storage.savePackage({
+            versions: [
+                {
+                    version: "1.0.0"
+                }
+            ],
+            metadata: {
+                name: "basic-valid-extension",
+                version: "1.0.0"
+            }
+        }, basicValidExtension);
     });
 });

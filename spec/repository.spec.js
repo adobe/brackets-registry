@@ -176,4 +176,14 @@ describe("Repository", function () {
             done();
         });
     });
+    
+    it("should return the current registry", function () {
+        var registry = {
+            "my-extension": {
+                metadata: { name: "my-extension", version: "1.0.0" }
+            }
+        };
+        repository.__set__("registry", registry);
+        expect(repository.getRegistry()).toBe(registry);
+    });
 });

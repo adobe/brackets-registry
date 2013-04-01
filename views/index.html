@@ -17,14 +17,37 @@
         }
     }
 </script>
-<h2>Upload an extension</h2>
-{{#if user}}
-    <form id="uploadForm" action="/upload" class="dropzone" method="post" enctype="multipart/form-data">
-        <div class="fallback">
-            <input type="file" name="extensionPackage" size="40">
-            <button class="btn" type="submit">Upload</button>
-        </div>
-    </form>
-{{else}}
-    <p>To upload an extension, <a href="/auth/github">sign in via GitHub</a>.</p>
-{{/if}}
+
+<div class="container">
+    <h2>Upload an extension</h2>
+    {{#if user}}
+        <form id="uploadForm" action="/upload" class="dropzone" method="post" enctype="multipart/form-data">
+            <div class="fallback">
+                <input type="file" name="extensionPackage" size="40">
+                <button class="btn" type="submit">Upload</button>
+            </div>
+        </form>
+    {{else}}
+        <p>To upload an extension, <a href="/auth/github">sign in via GitHub</a>.</p>
+    {{/if}}
+    </div>
+
+<div class="container">
+    <div class="extension-list">
+    <h2>Browse extensions</h2>
+        <table class="table">
+            <tr>
+                <th>Extension Name</th>
+                <th>Description</th>
+                <th>Version</th>
+            </tr>
+            {{#each registry}}
+                <tr>
+                    <td><a href="https://s3.amazonaws.com/registry.brackets.io/{{name}}/{{version}}.zip">{{#if title}}{{title}}{{else}}{{name}}{{/if}}</a></td>
+                    <td>{{description}}</td>
+                    <td>{{version}}</td>
+                </tr>
+            {{/each}}
+        </table>
+    </div>
+</div>

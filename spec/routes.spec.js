@@ -37,8 +37,54 @@ routes.__set__("_formatError", function (err) { return err; });
 
 describe("routes", function () {
     var req, res, mockRepository, acceptable = { html: true };
+    var mockRegistry = {
+        "my-extension": {
+            metadata: {
+                name: "my-extension",
+                version: "1.0.0"
+            },
+            owner: "github:somereallyfakeuser",
+            versions: [
+                { version: "1.0.0" }
+            ]
+        },
+        "another-extension": {
+            metadata: {
+                name: "another-extension",
+                version: "2.0.0"
+            },
+            owner: "github:anotherreallyfakeuser",
+            versions: [
+                { version: "2.0.0" }
+            ]
+        }
+    };
     
     beforeEach(function () {
+        this.addMatchers({
+            toBeSortedMetadataFrom: function (expected) {
+                var actual = this.actual;
+                if (!Array.isArray(actual)) {
+                    return false;
+                }
+                if (Object.keys(expected).length !== actual.length) {
+                    return false;
+                }
+                var actualKeys = [];
+                actual.forEach(function (item) {
+                    actualKeys.push(item.name);
+                });
+                Object.keys(expected).sort().forEach(function (key, index) {
+                    if (key !== actualKeys[index]) {
+                        return false;
+                    }
+                    if (JSON.stringify(expected[key].metadata) !== JSON.stringify(actual[index])) {
+                        return false;
+                    }
+                });
+                return true;
+            }
+        });
         req = {
             logout: createSpy("req.logout"),
             accepts: function (type) {
@@ -53,7 +99,10 @@ describe("routes", function () {
             set: createSpy("res.set")
         };
         mockRepository = {
-            addPackage: createSpy("repository.addPackage")
+            addPackage: createSpy("repository.addPackage"),
+            getRegistry: function () {
+                return mockRegistry;
+            }
         };
         routes.__set__("repository", mockRepository);
     });
@@ -71,23 +120,29 @@ describe("routes", function () {
     it("should render and inject correct data into the home page when user is not authenticated", function () {
         routes._index(req, res);
         expect(res.render).toHaveBeenCalled();
-        expect(res.render.mostRecentCall.args[0]).toBe("index");
-        expect(res.render.mostRecentCall.args[1].user).toBeUndefined();
+        
+        var args = res.render.mostRecentCall.args;
+        expect(args[0]).toBe("index");
+        expect(args[1].user).toBeUndefined();
+        expect(args[1].registry).toBeSortedMetadataFrom(mockRegistry);
     });
     
     it("should render and inject correct data into the home page when user is authenticated", function () {
         req.user = "github:someuser";
         routes._index(req, res);
         expect(res.render).toHaveBeenCalled();
-        expect(res.render.mostRecentCall.args[0]).toBe("index");
-        expect(res.render.mostRecentCall.args[1].user).toBe("someuser (github)");
+        var args = res.render.mostRecentCall.args;
+        expect(args[0]).toBe("index");
+        expect(args[1].user).toBe("someuser (github)");
+        expect(args[1].registry).toBeSortedMetadataFrom(mockRegistry);
     });
     
-    it("should return empty json when home page requested by client only accepting json", function () {
+    it("should return registry listing when home page requested by client only accepting json", function () {
         acceptable = { json: true };
         routes._index(req, res);
         expect(res.render).not.toHaveBeenCalled();
-        expect(res.send).toHaveBeenCalledWith({});
+        expect(res.send).toHaveBeenCalled();
+        expect(res.send.mostRecentCall.args[0].registry).toBeSortedMetadataFrom(mockRegistry);
     });
     
     it("should return 406 Not Acceptable if neither HTML or JSON is specified by client", function () {
@@ -97,7 +152,7 @@ describe("routes", function () {
         expect(res.send).toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(406);
     });
-
+    
     it("should logout and redirect to home page when logging out", function () {
         routes._logout(req, res);
         expect(req.logout).toHaveBeenCalled();

@@ -123,6 +123,7 @@ describe("Repository", function () {
             
             repository.addPackage("nopackage.zip", username, function (err, entry) {
                 expect(entry.metadata.description).toEqual("Less basic than before");
+                expect(entry.metadata.version).toEqual("2.0.0");
                 expect(entry.versions.length).toEqual(2);
                 expect(entry.versions[1].version).toEqual("2.0.0");
                 done();

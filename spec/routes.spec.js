@@ -73,7 +73,7 @@ describe("routes", function () {
         routes._index(req, res);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("index");
-        expect(res.render.mostRecentCall.args[1].user).toBe("github:someuser");
+        expect(res.render.mostRecentCall.args[1].user).toBe("someuser (github)");
     });
 
     it("should logout and redirect to home page when logging out", function () {

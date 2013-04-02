@@ -1,11 +1,9 @@
+<h2>Upload an extension</h2>
 {{#if user}}
-    <h2>Welcome, {{user}}!</h2>
     <form action="/upload" method="post" enctype="multipart/form-data">
         Upload a package: <input type="file" name="extensionPackage" size="40">
-        <input type="submit" value="Upload">
+        <button class="btn" type="submit">Upload</button>
     </form>
-    <p><a href="/logout">Sign out</a></p>
 {{else}}
-    <h2>Welcome to the Brackets Extension Registry!</h2>
-    <p>To upload an extension, you must first <a href="/auth/github">sign in via GitHub</a>.</p>
+    <p>To upload an extension, <a href="/auth/github">sign in via GitHub</a>.</p>
 {{/if}}

@@ -2,8 +2,29 @@
 <html>
     <head>
         <title>Brackets Extension Registry</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/css/styles.css" rel="stylesheet">
     </head>
     <body>
-        {{{body}}}
+
+        <div class="navbar navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="brand" href="/"><img class="logo pull-left" src="/img/brackets-24.svg">Brackets Extension Registry</a>
+                    <p class="navbar-text pull-right">
+                        {{#if user}}
+                            Signed in as {{user}} | <a href="/logout">Sign out</a>
+                        {{else}}
+                            <a href="/auth/github">Sign in via GitHub</a>
+                        {{/if}}
+                    </p>
+                </div>
+            </div>
+        </div>
+            
+        <div class="container">
+            {{{body}}}
+        </div>
     </body>
 </html>

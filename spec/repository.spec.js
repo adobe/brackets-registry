@@ -77,12 +77,19 @@ describe("Repository", function () {
             expect(registered.versions.length).toEqual(1);
             expect(registered.versions[0].version).toEqual("1.0.0");
             
+            // toBeCloseTo with precision -4 means that we're allowing anything less than 10
+            // seconds of difference to pass
+            expect(registered.versions[0].published.getTime()).toBeCloseTo(new Date().getTime(), -4);
+            
             var storage = repository.__get__("storage");
             expect(storage.files["basic-valid-extension/1.0.0.zip"]).toEqual(basicValidExtension);
             
             storage.getRegistry(function (err, storedRegistry) {
                 var registered2 = storedRegistry["basic-valid-extension"];
                 expect(registered2.metadata.name).toEqual(registered.metadata.name);
+                
+                // testing that Date serialization is working as it should
+                expect(new Date(registered2.versions[0].published).getTime()).toBeCloseTo(new Date().getTime(), -4);
                 done();
             });
         });
@@ -126,6 +133,11 @@ describe("Repository", function () {
                 expect(entry.metadata.version).toEqual("2.0.0");
                 expect(entry.versions.length).toEqual(2);
                 expect(entry.versions[1].version).toEqual("2.0.0");
+                
+                // toBeCloseTo with precision -4 means that we're allowing anything less than 10
+                // seconds of difference to pass
+                expect(entry.versions[1].published.getTime()).toBeCloseTo(new Date().getTime(), -4);
+                
                 done();
             });
         });

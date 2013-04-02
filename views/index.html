@@ -1,8 +1,29 @@
+<script src="/js/dropzone.js"></script>
+<script type="text/javascript">
+    // TODO: put this in a script file somewhere
+    Dropzone.options.uploadForm = {
+        paramName: "extensionPackage",
+        init: function () {
+            this.on("error", function (file, msg) {
+                var msgObj;
+                try {
+                    msgObj = JSON.parse(msg);
+                    msg = msgObj.errors.join(" ");
+                } catch (e) {
+                    // just use the input string
+                }
+                file.previewTemplate.querySelector(".error-message").innerHTML = msg;
+            });
+        }
+    }
+</script>
 <h2>Upload an extension</h2>
 {{#if user}}
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        Upload a package: <input type="file" name="extensionPackage" size="40">
-        <button class="btn" type="submit">Upload</button>
+    <form id="uploadForm" action="/upload" class="dropzone" method="post" enctype="multipart/form-data">
+        <div class="fallback">
+            <input type="file" name="extensionPackage" size="40">
+            <button class="btn" type="submit">Upload</button>
+        </div>
     </form>
 {{else}}
     <p>To upload an extension, <a href="/auth/github">sign in via GitHub</a>.</p>

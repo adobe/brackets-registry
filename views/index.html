@@ -35,19 +35,27 @@
 <div class="container">
     <div class="extension-list">
     <h2>Browse extensions</h2>
-        <table class="table">
+    <table class="table">
+        <tr>
+            <th>Extension Name</th>
+            <th>Description</th>
+            <th>Version</th>
+            <th>Last Updated</th>
+        </tr>
+        {{#each registry}}
             <tr>
-                <th>Extension Name</th>
-                <th>Description</th>
-                <th>Version</th>
+                {{#with metadata}}
+                <td>
+                    <a href="https://s3.amazonaws.com/repository.brackets.io/{{name}}/{{name}}-{{version}}.zip">
+                        {{#if title}}{{title}}{{else}}{{name}}{{/if}}
+                    </a>
+                </td>
+                <td>{{description}}</td>
+                <td>{{version}}</td>
+                {{/with}}
+                <td>{{lastVersionDate this}}</td>
             </tr>
-            {{#each registry}}
-                <tr>
-                    <td><a href="https://s3.amazonaws.com/repository.brackets.io/{{name}}/{{name}}-{{version}}.zip">{{#if title}}{{title}}{{else}}{{name}}{{/if}}</a></td>
-                    <td>{{description}}</td>
-                    <td>{{version}}</td>
-                </tr>
-            {{/each}}
-        </table>
+        {{/each}}
+    </table>
     </div>
 </div>

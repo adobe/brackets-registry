@@ -62,8 +62,10 @@ describe("routes", function () {
     
     beforeEach(function () {
         this.addMatchers({
-            toBeSortedMetadataFrom: function (expected) {
-                var actual = this.actual;
+            toBeSortedEntriesFrom: function (expected) {
+                var actual = this.actual,
+                    notText = this.isNot ? " not" : "",
+                    self = this;
                 if (!Array.isArray(actual)) {
                     return false;
                 }
@@ -72,17 +74,25 @@ describe("routes", function () {
                 }
                 var actualKeys = [];
                 actual.forEach(function (item) {
-                    actualKeys.push(item.name);
+                    actualKeys.push(item.metadata.name);
                 });
+                
+                var matches = true;
                 Object.keys(expected).sort().forEach(function (key, index) {
                     if (key !== actualKeys[index]) {
-                        return false;
+                        self.message = function () {
+                            return "Expected " + key + notText + " to be at position " + index;
+                        };
+                        matches = false;
                     }
-                    if (JSON.stringify(expected[key].metadata) !== JSON.stringify(actual[index])) {
-                        return false;
+                    if (JSON.stringify(expected[key]) !== JSON.stringify(actual[index])) {
+                        self.message = function () {
+                            return "Expected " + JSON.stringify(expected[key]) + notText + " to be " + JSON.stringify(actual[index]);
+                        };
+                        matches = false;
                     }
                 });
-                return true;
+                return matches;
             }
         });
         req = {
@@ -124,7 +134,7 @@ describe("routes", function () {
         var args = res.render.mostRecentCall.args;
         expect(args[0]).toBe("index");
         expect(args[1].user).toBeUndefined();
-        expect(args[1].registry).toBeSortedMetadataFrom(mockRegistry);
+        expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
     });
     
     it("should render and inject correct data into the home page when user is authenticated", function () {
@@ -134,7 +144,7 @@ describe("routes", function () {
         var args = res.render.mostRecentCall.args;
         expect(args[0]).toBe("index");
         expect(args[1].user).toBe("someuser (github)");
-        expect(args[1].registry).toBeSortedMetadataFrom(mockRegistry);
+        expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
     });
     
     it("should return registry listing when home page requested by client only accepting json", function () {
@@ -142,7 +152,7 @@ describe("routes", function () {
         routes._index(req, res);
         expect(res.render).not.toHaveBeenCalled();
         expect(res.send).toHaveBeenCalled();
-        expect(res.send.mostRecentCall.args[0].registry).toBeSortedMetadataFrom(mockRegistry);
+        expect(res.send.mostRecentCall.args[0].registry).toBeSortedEntriesFrom(mockRegistry);
     });
     
     it("should return 406 Not Acceptable if neither HTML or JSON is specified by client", function () {
@@ -204,7 +214,7 @@ describe("routes", function () {
         expect(res.render.mostRecentCall.args[0]).toBe("uploadSucceeded");
         expect(res.render.mostRecentCall.args[1]).toEqual({ entry: entry });
     });
-
+    
     it("should return entry data as JSON if upload succeeded and JSON was requested", function () {
         acceptable = { json: true };
         req.user = "github:someuser";
@@ -352,4 +362,41 @@ describe("routes", function () {
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.set).toHaveBeenCalledWith("WWW-Authenticate", "OAuth realm='https://registry.brackets.io'");
     });
+});
+
+describe("UI helpers", function () {
+    var entry;
+    
+    beforeEach(function () {
+        entry = {
+            metadata: {
+                name: "my-extension",
+                version: "1.0.0"
+            },
+            owner: "github:someuser"
+        };
+    });
+
+    it("should get the last published date from a registry entry with one version", function () {
+        entry.versions = [{
+            version: "1.0.0",
+            published: "2013-04-02T23:35:21.727Z"
+        }];
+        expect(routes._lastVersionDate(entry)).toBe(new Date(entry.versions[0].published).toLocaleDateString());
+    });
+    it("should get the last published date from a registry entry with multiple versions", function () {
+        entry.versions = [{
+            version: "1.0.0",
+            published: "2013-03-31T23:35:21.727Z"
+        }, {
+            version: "2.0.0",
+            published: "2013-04-02T23:35:21.727Z"
+        }];
+        expect(routes._lastVersionDate(entry)).toBe(new Date(entry.versions[1].published).toLocaleDateString());
+    });
+    it("should return empty string (and not crash) if some data is missing", function () {
+        entry.versions = [];
+        expect(routes._lastVersionDate(entry)).toBe("");
+    });
+
 });

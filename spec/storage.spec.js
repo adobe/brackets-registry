@@ -54,10 +54,10 @@ var sampleRegistry = {
 };
 
 var noopZlib = {
-    inflate: function (data, callback) {
+    gunzip: function (data, callback) {
         callback(null, data);
     },
-    deflate: function (data, callback) {
+    gzip: function (data, callback) {
         callback(null, data);
     }
 };
@@ -98,9 +98,9 @@ describe("S3 Storage", function () {
     
     it("should be able to retrieve the registry", function (done) {
         var storage = new s3storage.Storage(config);
-        zlib.deflate(new Buffer(JSON.stringify(sampleRegistry)), function (err, body) {
+        zlib.gzip(new Buffer(JSON.stringify(sampleRegistry)), function (err, body) {
             var result = {
-                body: body
+                Body: body
             };
             
             var getObject = function (params, callback) {
@@ -163,7 +163,7 @@ describe("S3 Storage", function () {
                         ContentType: "application/json",
                         Body: jasmine.any(Buffer)
                     });
-                    zlib.inflate(params.Body, function (err, uncompressed) {
+                    zlib.gunzip(params.Body, function (err, uncompressed) {
                         var registry = JSON.parse(uncompressed.toString());
                         expect(registry).toEqual(sampleRegistry);
                         done();
@@ -222,7 +222,7 @@ describe("S3 Storage", function () {
                 this.putObject = function (params, callback) {
                     expect(params).toEqual({
                         Bucket: "repository.brackets.io",
-                        Key: "basic-valid-extension/1.0.0.zip",
+                        Key: "basic-valid-extension/basic-valid-extension-1.0.0.zip",
                         ACL: "public-read",
                         ContentType: "application/zip",
                         Body: jasmine.any(stream.Stream)

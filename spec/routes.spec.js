@@ -230,7 +230,26 @@ describe("routes", function () {
         expect(res.send).toHaveBeenCalledWith({ entry: entry });
     });
 
-    it("should render upload failure page with 403 error if upload failed", function () {
+    it("should render upload failure page with 400 error if upload failed", function () {
+        req.user = "github:someuser";
+        req.files = {
+            extensionPackage: {
+                path: "/path/to/extension.zip",
+                size: 1000
+            }
+        };
+        routes._upload(req, res);
+        
+        var callback = mockRepository.addPackage.mostRecentCall.args[2],
+            err = new Error("REGISTRY_NOT_LOADED");
+        callback(err, null);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("REGISTRY_NOT_LOADED");
+    });
+
+    it("should render upload failure page with 401 error if upload failed due to auth error", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
@@ -243,13 +262,32 @@ describe("routes", function () {
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("NOT_AUTHORIZED");
         callback(err, null);
-        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
         expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NOT_AUTHORIZED");
     });
 
-    it("should return errors as JSON with 403 error if upload failed and JSON was requested", function () {
+    it("should return errors as JSON with 400 error if upload failed and JSON was requested", function () {
+        acceptable = { json: true };
+        req.user = "github:someuser";
+        req.files = {
+            extensionPackage: {
+                path: "/path/to/extension.zip",
+                size: 1000
+            }
+        };
+        routes._upload(req, res);
+        
+        var callback = mockRepository.addPackage.mostRecentCall.args[2],
+            err = new Error("REGISTRY_NOT_LOADED");
+        callback(err, null);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.render).not.toHaveBeenCalled();
+        expect(res.send).toHaveBeenCalledWith({ errors: ["REGISTRY_NOT_LOADED"] });
+    });
+
+    it("should return errors as JSON with 401 error if upload failed due to authorization failure and JSON was requested", function () {
         acceptable = { json: true };
         req.user = "github:someuser";
         req.files = {
@@ -263,12 +301,12 @@ describe("routes", function () {
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("NOT_AUTHORIZED");
         callback(err, null);
-        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.status).toHaveBeenCalledWith(401);
         expect(res.render).not.toHaveBeenCalled();
         expect(res.send).toHaveBeenCalledWith({ errors: ["NOT_AUTHORIZED"] });
     });
 
-    it("should render upload failure page with 403 error if upload failed and there are multiple errors", function () {
+    it("should render upload failure page with 400 error if upload failed and there are multiple errors", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
@@ -282,7 +320,7 @@ describe("routes", function () {
             err = new Error("VALIDATION_FAILED");
         err.errors = [["MISSING_PACKAGE_NAME", "/path/to/extension.zip"], ["INVALID_VERSION_NUMBER", "x.y.z"]];
         callback(err, null);
-        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).toHaveBeenCalled();
         
         var args = res.render.mostRecentCall.args;
@@ -292,11 +330,11 @@ describe("routes", function () {
         expect(args[1].errors[2]).toEqual(["INVALID_VERSION_NUMBER", "x.y.z"]);
     });
 
-    it("should render upload failure page with 403 error if no file is received", function () {
+    it("should render upload failure page with 400 error if no file is received", function () {
         req.user = "github:someuser";
         req.files = {};
         routes._upload(req, res);
-        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
         expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NO_FILE");

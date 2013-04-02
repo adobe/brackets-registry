@@ -36,15 +36,21 @@ routes.__set__("_mapError", function (key) { return key; });
 routes.__set__("_formatError", function (err) { return err; });
 
 describe("routes", function () {
-    var req, res, mockRepository;
+    var req, res, mockRepository, acceptable = { html: true };
     
     beforeEach(function () {
         req = {
-            logout: createSpy("req.logout")
+            logout: createSpy("req.logout"),
+            accepts: function (type) {
+                return acceptable[type] || false;
+            }
         };
         res = {
             redirect: createSpy("res.redirect"),
-            render: createSpy("res.render")
+            render: createSpy("res.render"),
+            send: createSpy("res.send"),
+            status: createSpy("res.status"),
+            set: createSpy("res.set")
         };
         mockRepository = {
             addPackage: createSpy("repository.addPackage")
@@ -54,6 +60,7 @@ describe("routes", function () {
     
     afterEach(function () {
         routes.__set__("repository", repository);
+        acceptable = { html: true };
     });
     
     it("should redirect to home page on successful authentication", function () {
@@ -75,6 +82,21 @@ describe("routes", function () {
         expect(res.render.mostRecentCall.args[0]).toBe("index");
         expect(res.render.mostRecentCall.args[1].user).toBe("someuser (github)");
     });
+    
+    it("should return empty json when home page requested by client only accepting json", function () {
+        acceptable = { json: true };
+        routes._index(req, res);
+        expect(res.render).not.toHaveBeenCalled();
+        expect(res.send).toHaveBeenCalledWith({});
+    });
+    
+    it("should return 406 Not Acceptable if neither HTML or JSON is specified by client", function () {
+        acceptable = {};
+        routes._index(req, res);
+        expect(res.render).not.toHaveBeenCalled();
+        expect(res.send).toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(406);
+    });
 
     it("should logout and redirect to home page when logging out", function () {
         routes._logout(req, res);
@@ -82,9 +104,11 @@ describe("routes", function () {
         expect(res.redirect).toHaveBeenCalledWith("/");
     });
     
-    it("should render failure page if auth failed", function () {
+    it("should return 401 and render failure page if auth failed", function () {
         routes._authFailed(req, res);
-        expect(res.render).toHaveBeenCalledWith("authFailed");
+        expect(res.render).toHaveBeenCalledWith("authFailed", undefined);
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.set).toHaveBeenCalledWith("WWW-Authenticate", "OAuth realm='https://registry.brackets.io'");
     });
     
     it("should pass uploaded file to the repository", function () {
@@ -126,7 +150,32 @@ describe("routes", function () {
         expect(res.render.mostRecentCall.args[1]).toEqual({ entry: entry });
     });
 
-    it("should render upload failure page with error if upload failed", function () {
+    it("should return entry data as JSON if upload succeeded and JSON was requested", function () {
+        acceptable = { json: true };
+        req.user = "github:someuser";
+        req.files = {
+            extensionPackage: {
+                path: "/path/to/extension.zip",
+                size: 1000
+            }
+        };
+        routes._upload(req, res);
+        
+        var callback = mockRepository.addPackage.mostRecentCall.args[2],
+            entry = {
+                metadata: {
+                    name: "my-package",
+                    version: "1.0.0"
+                },
+                owner: "github:someuser",
+                versions: [{ version: "1.0.0" }]
+            };
+        callback(null, entry);
+        expect(res.render).not.toHaveBeenCalled();
+        expect(res.send).toHaveBeenCalledWith({ entry: entry });
+    });
+
+    it("should render upload failure page with 403 error if upload failed", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
@@ -139,12 +188,32 @@ describe("routes", function () {
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("NOT_AUTHORIZED");
         callback(err, null);
+        expect(res.status).toHaveBeenCalledWith(403);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
         expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NOT_AUTHORIZED");
     });
 
-    it("should render upload failure page if upload failed and there are multiple errors", function () {
+    it("should return errors as JSON with 403 error if upload failed and JSON was requested", function () {
+        acceptable = { json: true };
+        req.user = "github:someuser";
+        req.files = {
+            extensionPackage: {
+                path: "/path/to/extension.zip",
+                size: 1000
+            }
+        };
+        routes._upload(req, res);
+        
+        var callback = mockRepository.addPackage.mostRecentCall.args[2],
+            err = new Error("NOT_AUTHORIZED");
+        callback(err, null);
+        expect(res.status).toHaveBeenCalledWith(403);
+        expect(res.render).not.toHaveBeenCalled();
+        expect(res.send).toHaveBeenCalledWith({ errors: ["NOT_AUTHORIZED"] });
+    });
+
+    it("should render upload failure page with 403 error if upload failed and there are multiple errors", function () {
         req.user = "github:someuser";
         req.files = {
             extensionPackage: {
@@ -158,23 +227,27 @@ describe("routes", function () {
             err = new Error("VALIDATION_FAILED");
         err.errors = [["MISSING_PACKAGE_NAME", "/path/to/extension.zip"], ["INVALID_VERSION_NUMBER", "x.y.z"]];
         callback(err, null);
+        expect(res.status).toHaveBeenCalledWith(403);
         expect(res.render).toHaveBeenCalled();
-        expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
-        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("VALIDATION_FAILED");
-        expect(res.render.mostRecentCall.args[1].errors[1]).toEqual(["MISSING_PACKAGE_NAME", "/path/to/extension.zip"]);
-        expect(res.render.mostRecentCall.args[1].errors[2]).toEqual(["INVALID_VERSION_NUMBER", "x.y.z"]);
+        
+        var args = res.render.mostRecentCall.args;
+        expect(args[0]).toBe("uploadFailed");
+        expect(args[1].errors[0]).toBe("VALIDATION_FAILED");
+        expect(args[1].errors[1]).toEqual(["MISSING_PACKAGE_NAME", "/path/to/extension.zip"]);
+        expect(args[1].errors[2]).toEqual(["INVALID_VERSION_NUMBER", "x.y.z"]);
     });
 
-    it("should render upload failure page with error if no file is received", function () {
+    it("should render upload failure page with 403 error if no file is received", function () {
         req.user = "github:someuser";
         req.files = {};
         routes._upload(req, res);
+        expect(res.status).toHaveBeenCalledWith(403);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
         expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NO_FILE");
     });
     
-    it("should render upload failure page with error immediately (without hitting registry) if user is not logged in", function () {
+    it("should return 401 and render failure page if attempting to upload when user is not logged in", function () {
         req.files = {
             extensionPackage: {
                 path: "/path/to/extension.zip",
@@ -182,8 +255,8 @@ describe("routes", function () {
             }
         };
         routes._upload(req, res);
-        expect(res.render).toHaveBeenCalled();
-        expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
-        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NOT_LOGGED_IN");
+        expect(res.render).toHaveBeenCalledWith("authFailed", undefined);
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.set).toHaveBeenCalledWith("WWW-Authenticate", "OAuth realm='https://registry.brackets.io'");
     });
 });

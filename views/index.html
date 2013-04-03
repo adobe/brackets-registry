@@ -1,23 +1,3 @@
-<script src="/js/dropzone.js"></script>
-<script type="text/javascript">
-    // TODO: put this in a script file somewhere
-    Dropzone.options.uploadForm = {
-        paramName: "extensionPackage",
-        init: function () {
-            this.on("error", function (file, msg) {
-                var msgObj;
-                try {
-                    msgObj = JSON.parse(msg);
-                    msg = msgObj.errors.join(" ");
-                } catch (e) {
-                    // just use the input string
-                }
-                file.previewTemplate.querySelector(".error-message").innerHTML = msg;
-            });
-        }
-    }
-</script>
-
 <div class="container">
     <h2>Upload an extension</h2>
     {{#if user}}
@@ -33,29 +13,8 @@
     </div>
 
 <div class="container">
-    <div class="extension-list">
     <h2>Browse extensions</h2>
-    <table class="table">
-        <tr>
-            <th>Extension Name</th>
-            <th>Description</th>
-            <th>Version</th>
-            <th>Last Updated</th>
-        </tr>
-        {{#each registry}}
-            <tr>
-                {{#with metadata}}
-                <td>
-                    <a href="https://s3.amazonaws.com/repository.brackets.io/{{name}}/{{name}}-{{version}}.zip">
-                        {{#if title}}{{title}}{{else}}{{name}}{{/if}}
-                    </a>
-                </td>
-                <td>{{description}}</td>
-                <td>{{version}}</td>
-                {{/with}}
-                <td>{{lastVersionDate this}}</td>
-            </tr>
-        {{/each}}
-    </table>
+    <div class="extension-list">
+        {{> registryList}}
     </div>
 </div>

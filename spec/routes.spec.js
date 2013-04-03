@@ -33,6 +33,7 @@ var repository = routes.__get__("repository");
 
 // Pull out private functions we want to test
 var _index = routes.__get__("_index"),
+    _registryList = routes.__get__("_registryList"),
     _authCallback = routes.__get__("_authCallback"),
     _authFailed = routes.__get__("_authFailed"),
     _logout = routes.__get__("_logout"),
@@ -161,6 +162,15 @@ describe("routes", function () {
         expect(res.render).not.toHaveBeenCalled();
         expect(res.send).toHaveBeenCalled();
         expect(res.send.mostRecentCall.args[0].registry).toBeSortedEntriesFrom(mockRegistry);
+    });
+    
+    it("should render just the registry partial when requested", function () {
+        _registryList(req, res);
+        expect(res.render).toHaveBeenCalled();
+        var args = res.render.mostRecentCall.args;
+        expect(args[0]).toBe("registryList");
+        expect(args[1].layout).toBe(false);
+        expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
     });
     
     it("should return 406 Not Acceptable if neither HTML or JSON is specified by client", function () {

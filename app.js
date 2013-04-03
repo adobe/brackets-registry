@@ -98,3 +98,13 @@ routes.setup(app);
 
 // Start the HTTPS server
 https.createServer({key: key, cert: cert}, app).listen(config.port);
+
+// If it's configured, turn on the REPL for localhost
+if (config.repl) {
+    var replify = require("replify");
+    replify({
+        name: "registry"
+    }, app, {
+        repository: repository
+    });
+}

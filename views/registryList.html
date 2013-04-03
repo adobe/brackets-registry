@@ -1,0 +1,28 @@
+{{#if registry.length}}
+<table class="table">
+    <tr>
+        <th class="ext-name">Extension</th>
+        <th class="ext-desc">Description</th>
+    </tr>
+    {{#each registry}}
+        <tr>
+            <td>
+                <a href="https://s3.amazonaws.com/repository.brackets.io/{{name}}/{{name}}-{{version}}.zip">
+                    {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}
+                    <span class="muted ext-version">{{metadata.version}}</span><br/>
+                    <span class="muted ext-date">{{lastVersionDate this}}</span>
+                </a>
+            </td>
+            <td>
+                {{#if metadata.description}}
+                    {{metadata.description}}
+                {{else}}
+                    <span class="muted"><em>No description</em></span>
+                {{/if}}
+            </td>
+        </tr>
+    {{/each}}
+</table>
+{{else}}
+<p class="muted"><em>No extensions yet</em></p>
+{{/if}}

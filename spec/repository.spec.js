@@ -124,7 +124,10 @@ describe("Repository", function () {
                 metadata: {
                     name: "basic-valid-extension",
                     description: "Less basic than before",
-                    version: "2.0.0"
+                    version: "2.0.0",
+                    engines: {
+                        brackets: ">0.21.0"
+                    }
                 }
             });
             
@@ -133,6 +136,7 @@ describe("Repository", function () {
                 expect(entry.metadata.version).toEqual("2.0.0");
                 expect(entry.versions.length).toEqual(2);
                 expect(entry.versions[1].version).toEqual("2.0.0");
+                expect(entry.versions[1].brackets).toEqual(">0.21.0");
                 
                 // toBeCloseTo with precision -4 means that we're allowing anything less than 10
                 // seconds of difference to pass

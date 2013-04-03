@@ -3,20 +3,23 @@
     <tr>
         <th class="ext-name">Extension</th>
         <th class="ext-desc">Description</th>
-        <th class="ext-date">Published</th>
     </tr>
     {{#each registry}}
         <tr>
-            {{#with metadata}}
             <td>
                 <a href="https://s3.amazonaws.com/repository.brackets.io/{{name}}/{{name}}-{{version}}.zip">
-                    {{#if title}}{{title}}{{else}}{{name}}{{/if}}
-                    <span class="muted ext-version">{{version}}</span>
+                    {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}
+                    <span class="muted ext-version">{{metadata.version}}</span><br/>
+                    <span class="muted ext-date">{{lastVersionDate this}}</span>
                 </a>
             </td>
-            <td>{{#if description}}{{description}}{{else}}<span class="muted"><em>No description</em></span>{{/if}}</td>
-            {{/with}}
-            <td>{{lastVersionDate this}}</td>
+            <td>
+                {{#if metadata.description}}
+                    {{metadata.description}}
+                {{else}}
+                    <span class="muted"><em>No description</em></span>
+                {{/if}}
+            </td>
         </tr>
     {{/each}}
 </table>

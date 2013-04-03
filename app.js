@@ -42,7 +42,8 @@ var key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key")),
     config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json")));
 
 config.hostname = config.hostname || "localhost";
-config.port = config.port || 4040;
+config.securePort = config.securePort || 4040;
+config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 
 // Configure the repository
@@ -97,4 +98,13 @@ app.configure(function () {
 routes.setup(app);
 
 // Start the HTTPS server
-https.createServer({key: key, cert: cert}, app).listen(config.port);
+https.createServer({key: key, cert: cert}, app).listen(config.securePort);
+
+// Redirect HTTP to HTTPS
+http.createServer(function (req, res) {
+    res.writeHead(301, {
+        'Content-Type': 'text/plain',
+        'Location': 'https://' + config.hostname + ":" + config.securePort + req.url
+    });
+    res.end('Redirecting to SSL\n');
+}).listen(config.redirectPort);

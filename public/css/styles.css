@@ -5,3 +5,10 @@ body {
 .logo {
     margin: -2px 8px 0 0;
 }
+
+.extension-list .ext-desc {
+    width: 50%;
+}
+.extension-list .ext-version {
+    font-size: 0.8em;
+}

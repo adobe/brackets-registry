@@ -202,4 +202,16 @@ describe("Repository", function () {
         repository.__set__("registry", registry);
         expect(repository.getRegistry()).toBe(registry);
     });
+    
+    it("should report errors that come from the storage", function (done) {
+        var storage = repository.__get__("storage");
+        var expectedError = new Error("It brokeded.");
+        storage.savePackage = function (entry, path, callback) {
+            callback(expectedError);
+        };
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            expect(err).toBe(expectedError);
+            done();
+        });
+    });
 });

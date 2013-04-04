@@ -227,7 +227,7 @@ describe("S3 Storage", function () {
                         ContentType: "application/zip",
                         Body: jasmine.any(stream.Stream)
                     });
-                    done();
+                    callback(null);
                 };
             }
         };
@@ -242,6 +242,8 @@ describe("S3 Storage", function () {
                 name: "basic-valid-extension",
                 version: "1.0.0"
             }
-        }, basicValidExtension);
+        }, basicValidExtension, function (err) {
+            done();
+        });
     });
 });

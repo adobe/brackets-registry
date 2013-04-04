@@ -6,7 +6,7 @@ $(function () {
     Dropzone.options.uploadForm = {
         paramName: "extensionPackage",
         createImageThumbnails: false,
-        dictDefaultMessage: "Drop extension ZIP files here, or click to browse",
+        dictDefaultMessage: "Drop extension zip files here, or click to browse",
         previewTemplate: "<div class=\"preview file-preview\">\n  <div class=\"details\">\n   <div class=\"filename\"><span></span></div>\n  </div>\n  <div class=\"progress\"><span class=\"upload\"></span></div>\n  <div class=\"success-mark\"><span>✔</span></div>\n  <div class=\"error-mark\"><span>✘</span></div>\n  <div class=\"error-message\"><span></span></div>\n  <div class=\"success-message\"><span></span></div>\n</div>",
         init: function () {
             this.on("error", function (file, response) {

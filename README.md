@@ -28,3 +28,7 @@ There's an optional REPL available. To set it up:
 4. (in another terminal window) rc /tmp/repl/registry.sock
 
 You'll have the Express "app" available as `app`, and the repository module available as `repository`.
+
+## DropzoneJS
+
+This project uses a slightly modified version of [DropzoneJS](https://github.com/enyo/dropzone). If you need to update it, take a look at the dropzone.js file for CHANGED comments.

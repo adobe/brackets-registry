@@ -657,6 +657,8 @@ require.register("dropzone/lib/dropzone.js", function(exports, require, module){
           if (!_this.options.clickable) {
             return;
           }
+          // CHANGED: we added the check for .message span below in order to make the label
+          // an acceptable click zone
           if (evt.target === _this.element || evt.target === _this.element.querySelector(".message") ||
               evt.target === _this.element.querySelector(".message span")) {
             return _this.hiddenFileInput.click();

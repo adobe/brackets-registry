@@ -83,6 +83,7 @@ app.configure(function () {
     app.engine("html", require("hbs").__express);
     app.use(express.favicon(path.resolve(__dirname, "public/favicon.ico")));
     app.use(express.logger("dev"));
+    app.use(express.limit("5mb"));
     app.use(express.cookieParser());
     app.use(express.bodyParser());
     app.use(express.methodOverride());

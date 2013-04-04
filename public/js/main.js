@@ -18,6 +18,11 @@ $(function () {
                     // just use the input string
                     msg = response;
                 }
+                if (msg.indexOf("Request Entity Too Large") !== -1) {
+                    // Node spits out a huge error message in this case. (Dropzone doesn't
+                    // give us the status code, so we have to detect this by a string.)
+                    msg = "Uploads are limited to 5MB.";
+                }
                 file.previewTemplate.querySelector(".error-message").innerHTML = msg;
             });
             this.on("success", function (file, responseObj) {

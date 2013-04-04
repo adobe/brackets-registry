@@ -15,7 +15,8 @@ A node.js-powered registry for Brackets extensions.
    * `githubClientId` - client id for registered GitHub app
    * `githubClientSecret` - client secret for register GitHub app
    * `hostname` - hostname of the server, defaults to localhost
-   * `port` - port to run on, defaults to 4040
+   * `securePort` - port to run HTTPS on, defaults to 4040
+   * `redirectPort` - port to run HTTP on, just redirects to `securePort`, defaults to 4000
 5. `npm start`
 
 ## Debugging REPL

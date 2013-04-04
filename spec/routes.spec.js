@@ -27,7 +27,8 @@
 "use strict";
 
 var rewire = require("rewire"),
-    routes = rewire("../lib/routes");
+    routes = rewire("../lib/routes"),
+    fs     = require("fs");
 
 var repository = routes.__get__("repository");
 
@@ -69,7 +70,23 @@ describe("routes", function () {
         }
     };
     
+    var lastDeleted;
+    
+    // Rewire doesn't work with fs, but we can just pull the parts of fs
+    // that we need
+    var rewiredFS = {
+        readFileSync: fs.readFileSync,
+        unlink: function (path, callback) {
+            lastDeleted = path;
+            callback(null);
+        }
+    };
+    
+    routes.__set__("fs", rewiredFS);
+
     beforeEach(function () {
+        lastDeleted = null;
+        
         this.addMatchers({
             toBeSortedEntriesFrom: function (expected) {
                 var actual = this.actual,
@@ -244,6 +261,7 @@ describe("routes", function () {
                 versions: [{ version: "1.0.0" }]
             };
         callback(null, entry);
+        expect(lastDeleted).toEqual("/path/to/extension.zip");
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadSucceeded");
         expect(res.render.mostRecentCall.args[1]).toEqual({ entry: entry });
@@ -270,6 +288,7 @@ describe("routes", function () {
                 versions: [{ version: "1.0.0" }]
             };
         callback(null, entry);
+        expect(lastDeleted).toEqual("/path/to/extension.zip");
         expect(res.render).not.toHaveBeenCalled();
         expect(res.send).toHaveBeenCalledWith({ entry: entry });
     });
@@ -287,6 +306,7 @@ describe("routes", function () {
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("REGISTRY_NOT_LOADED");
         callback(err, null);
+        expect(lastDeleted).toEqual("/path/to/extension.zip");
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
@@ -306,6 +326,7 @@ describe("routes", function () {
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("NOT_AUTHORIZED");
         callback(err, null);
+        expect(lastDeleted).toEqual("/path/to/extension.zip");
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
@@ -326,6 +347,7 @@ describe("routes", function () {
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("REGISTRY_NOT_LOADED");
         callback(err, null);
+        expect(lastDeleted).toEqual("/path/to/extension.zip");
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).not.toHaveBeenCalled();
         expect(res.send).toHaveBeenCalledWith({ errors: ["REGISTRY_NOT_LOADED"] });

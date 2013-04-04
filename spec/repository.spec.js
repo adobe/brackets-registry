@@ -202,4 +202,46 @@ describe("Repository", function () {
         repository.__set__("registry", registry);
         expect(repository.getRegistry()).toBe(registry);
     });
+    
+    it("should report errors that come from the storage", function (done) {
+        var storage = repository.__get__("storage");
+        var expectedError = new Error("It brokeded.");
+        storage.savePackage = function (entry, path, callback) {
+            callback(expectedError);
+        };
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            expect(err).toBe(expectedError);
+            var registry = repository.__get__("registry");
+            expect(registry["basic-valid-extension"]).toBeUndefined();
+            done();
+        });
+    });
+    
+    it("should not update the registry if there's a storage error", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            setValidationResult({
+                metadata: {
+                    name: "basic-valid-extension",
+                    description: "Less basic than before",
+                    version: "2.0.0",
+                    engines: {
+                        brackets: ">0.21.0"
+                    }
+                }
+            });
+            
+            var storage = repository.__get__("storage");
+            var expectedError = new Error("It brokeded.");
+            storage.savePackage = function (entry, path, callback) {
+                callback(expectedError);
+            };
+            
+            repository.addPackage("nopackage.zip", username, function (err, entry) {
+                expect(err).toBe(expectedError);
+                var registry = repository.__get__("registry");
+                expect(registry["basic-valid-extension"].versions.length).toEqual(1);
+                done();
+            });
+        });
+    });
 });

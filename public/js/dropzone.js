@@ -657,7 +657,8 @@ require.register("dropzone/lib/dropzone.js", function(exports, require, module){
           if (!_this.options.clickable) {
             return;
           }
-          if (evt.target === _this.element || evt.target === _this.element.querySelector(".message")) {
+          if (evt.target === _this.element || evt.target === _this.element.querySelector(".message") ||
+              evt.target === _this.element.querySelector(".message span")) {
             return _this.hiddenFileInput.click();
           }
         }

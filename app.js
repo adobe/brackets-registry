@@ -82,7 +82,9 @@ app.configure(function () {
     app.set("views", path.resolve(__dirname, "views"));
     app.set("view engine", "html");
     app.engine("html", require("hbs").__express);
+    app.use(express.favicon(path.resolve(__dirname, "public/favicon.ico")));
     app.use(express.logger("dev"));
+    app.use(express.limit("5mb"));
     app.use(express.cookieParser());
     app.use(express.bodyParser());
     app.use(express.methodOverride());
@@ -108,3 +110,13 @@ http.createServer(function (req, res) {
     });
     res.end('Redirecting to SSL\n');
 }).listen(config.redirectPort);
+
+// If it's configured, turn on the REPL for localhost
+if (config.repl) {
+    var replify = require("replify");
+    replify({
+        name: "registry"
+    }, app, {
+        repository: repository
+    });
+}

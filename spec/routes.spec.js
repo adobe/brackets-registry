@@ -47,16 +47,6 @@ routes.__set__("_formatError", function (err) { return err; });
 describe("routes", function () {
     var req, res, mockRepository, acceptable = { html: true };
     var mockRegistry = {
-        "my-extension": {
-            metadata: {
-                name: "my-extension",
-                version: "1.0.0"
-            },
-            owner: "github:somereallyfakeuser",
-            versions: [
-                { version: "1.0.0" }
-            ]
-        },
         "another-extension": {
             metadata: {
                 name: "another-extension",
@@ -64,7 +54,17 @@ describe("routes", function () {
             },
             owner: "github:anotherreallyfakeuser",
             versions: [
-                { version: "2.0.0" }
+                { version: "2.0.0", published: "2013-04-03T08:32:02.153Z" }
+            ]
+        },
+        "my-extension": {
+            metadata: {
+                name: "my-extension",
+                version: "1.0.0"
+            },
+            owner: "github:somereallyfakeuser",
+            versions: [
+                { version: "1.0.0", published: "2013-04-02T21:12:33.865Z" }
             ]
         }
     };
@@ -81,27 +81,43 @@ describe("routes", function () {
                 if (Object.keys(expected).length !== actual.length) {
                     return false;
                 }
-                var actualKeys = [];
+
+                // test that all items are present and unchanged                
+                var actualValues = {};
                 actual.forEach(function (item) {
-                    actualKeys.push(item.metadata.name);
+                    actualValues[item.metadata.name] = item;
                 });
                 
-                var matches = true;
-                Object.keys(expected).sort().forEach(function (key, index) {
-                    if (key !== actualKeys[index]) {
+                var ok = true;
+                Object.keys(expected).forEach(function (key) {
+                    if (JSON.stringify(expected[key]) !== JSON.stringify(actualValues[key])) {
                         self.message = function () {
-                            return "Expected " + key + notText + " to be at position " + index;
+                            return "Expected " + JSON.stringify(expected[key]) + notText +
+                                " to be " + JSON.stringify(actualValues[key]);
                         };
-                        matches = false;
-                    }
-                    if (JSON.stringify(expected[key]) !== JSON.stringify(actual[index])) {
-                        self.message = function () {
-                            return "Expected " + JSON.stringify(expected[key]) + notText + " to be " + JSON.stringify(actual[index]);
-                        };
-                        matches = false;
+                        ok = false;
                     }
                 });
-                return matches;
+                if (!ok) {
+                    return false;
+                }
+                
+                // test that items are sorted by date (newest first)
+                var prevTime = Infinity, prevDate;
+                actual.forEach(function (item) {
+                    var newDate = item.versions[item.versions.length - 1].published,
+                        newTime = new Date(newDate).getTime();
+                    if (newTime > prevTime) {
+                        self.message = function () {
+                            return "Expected " + newDate + " to be earlier than " + prevDate;
+                        };
+                        ok = false;
+                    }
+                    prevTime = newTime;
+                    prevDate = newDate;
+                });
+                
+                return ok;
             }
         });
         req = {

@@ -18,3 +18,17 @@ A node.js-powered registry for Brackets extensions.
    * `port` - port to run on, defaults to 4040
 5. `npm start`
 
+## Debugging REPL
+
+There's an optional REPL available. To set it up:
+
+1. Add `"repl": true` to the config.json file.
+2. npm install repl-client -g
+3. npm start
+4. (in another terminal window) rc /tmp/repl/registry.sock
+
+You'll have the Express "app" available as `app`, and the repository module available as `repository`.
+
+## DropzoneJS
+
+This project uses a slightly modified version of [DropzoneJS](https://github.com/enyo/dropzone). If you need to update it, take a look at the dropzone.js file for CHANGED comments.

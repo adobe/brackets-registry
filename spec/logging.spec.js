@@ -78,6 +78,10 @@ describe("Error Reporter", function () {
         fakeConsole.reset();
     });
     
+    afterEach(function () {
+        logging.__get__("_clearRecentCalls")();
+    });
+    
     it("will log a string", function () {
         logging.error("Something went wrong");
         expect(fakeUtil.messages.length).toBe(1);
@@ -159,5 +163,14 @@ describe("Error Reporter", function () {
         expect(fakeConsole.messages.length).toBe(0);
         expect(fakeUtil.messages.length).toBe(0);
         expect(fakeSNS.messages.length).toBe(0);
+    });
+    
+    it("throttles logging to avoid too many messages", function (done) {
+        logging.error("Thing went wrong");
+        setTimeout(function () {
+            logging.error("Thing went wrong");
+            expect(fakeUtil.messages.length).toBe(1);
+            done();
+        }, 25);
     });
 });

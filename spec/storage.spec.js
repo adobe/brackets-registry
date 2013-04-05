@@ -24,7 +24,7 @@
 
 /*jslint vars: true, plusplus: true, devel: true, node: true, nomen: true,
 indent: 4, maxerr: 50 */
-/*global expect, jasmine, describe, it, beforeEach, afterEach */
+/*global expect, jasmine, describe, it, beforeEach, afterEach, spyOn */
 
 "use strict";
 
@@ -65,7 +65,7 @@ var noopZlib = {
 describe("S3 Storage", function () {
     
     var originalZlib = s3storage.__get__("zlib");
-    
+
     beforeEach(function () {
         AWS = {
             config: {
@@ -141,10 +141,14 @@ describe("S3 Storage", function () {
             }
         };
         
+        var logging = s3storage.__get__("logging");
+        spyOn(logging, "error");
+        
         storage.getRegistry(function (err, registry) {
             expect(err.message).toEqual("UNREADABLE_REGISTRY");
             expect(err.errors.length).toEqual(1);
             expect(registry).toBeNull();
+            expect(logging.error).toHaveBeenCalledWith("S3 parsing registry", jasmine.any(Error));
             done();
         });
     });

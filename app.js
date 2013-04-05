@@ -34,7 +34,8 @@ var express = require("express"),
     passport = require("passport"),
     GitHubStrategy = require("passport-github").Strategy,
     repository = require("./lib/repository"),
-    routes = require("./lib/routes");
+    routes = require("./lib/routes"),
+    logging = require("./lib/logging");
 
 // Load cert and secret configuration
 var key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key")),
@@ -45,6 +46,8 @@ config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
 config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
+
+logging.configure(config);
 
 // Configure the repository
 repository.configure(config);

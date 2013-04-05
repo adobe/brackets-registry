@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="54px" height="55px" viewBox="0 0 54 55" enable-background="new 0 0 54 55" xml:space="preserve">
+<g opacity="0.5">
+	<g>
+		<path fill="#FFFFFF" d="M45,1H9c-4.951,0-9,4.05-9,9v36c0,4.95,4.049,9,9,9h36c4.949,0,9-4.05,9-9V10C54,5.05,49.949,1,45,1z
+			 M47.25,43.75c0,2.475-2.025,4.5-4.5,4.5h-31.5c-2.475,0-4.5-2.025-4.5-4.5v-31.5c0-2.476,2.025-4.5,4.5-4.5h31.5
+			c2.475,0,4.5,2.024,4.5,4.5V43.75z"/>
+		<g>
+			<g>
+				<g>
+					<path fill="#FFFFFF" d="M25.312,15.344v5.906h-5.906v13.5h5.906v5.906H13.5V15.344H25.312z"/>
+				</g>
+				<g>
+					<path fill="#FFFFFF" d="M40.5,15.344v25.312H28.688V34.75h5.906v-13.5h-5.906v-5.906H40.5z"/>
+				</g>
+			</g>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<path fill="#D9D9D9" d="M45,0H9C4.049,0,0,4.05,0,9v36c0,4.95,4.049,9,9,9h36c4.949,0,9-4.05,9-9V9C54,4.05,49.949,0,45,0z
+			 M47.25,42.75c0,2.475-2.025,4.5-4.5,4.5h-31.5c-2.475,0-4.5-2.025-4.5-4.5v-31.5c0-2.476,2.025-4.5,4.5-4.5h31.5
+			c2.475,0,4.5,2.024,4.5,4.5V42.75z"/>
+		<g>
+			<g>
+				<g>
+					<path fill="#D9D9D9" d="M25.312,14.344v5.906h-5.906v13.5h5.906v5.906H13.5V14.344H25.312z"/>
+				</g>
+				<g>
+					<path fill="#D9D9D9" d="M40.5,14.344v25.312H28.688V33.75h5.906v-13.5h-5.906v-5.906H40.5z"/>
+				</g>
+			</g>
+		</g>
+	</g>
+</g>
+</svg>

@@ -11,7 +11,7 @@
 .dropzone {
   position: relative;
   border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(0,0,0,0.02);
+  background: url(../img/brackets-gray.svg) 50% 50% no-repeat, rgba(0,0,0,0.02);
   padding: 1em;
   width: 400px;
   min-height: 200px;

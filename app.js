@@ -68,7 +68,7 @@ passport.use(
         {
             clientID: config.githubClientId,
             clientSecret: config.githubClientSecret,
-            callbackURL: "https://" + config.hostname + ":" + config.port + "/auth/github/callback" // *** TODO: real callback URL
+            callbackURL: "https://" + config.hostname + ":" + config.securePort + "/auth/github/callback"
         },
         function (accessToken, refreshToken, profile, done) {
             done(null, "github:" + profile.username);

@@ -120,6 +120,7 @@ if (config.repl) {
     replify({
         name: "registry"
     }, app, {
-        repository: repository
+        repository: repository,
+        logging: logging
     });
 }

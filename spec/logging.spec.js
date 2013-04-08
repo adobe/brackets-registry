@@ -71,6 +71,9 @@ logging.__set__("console", fakeConsole);
 describe("Error Reporter", function () {
     beforeEach(function () {
         AWS = {
+            config: {
+                update: jasmine.createSpy()
+            }
         };
         logging.__set__("AWS", AWS);
         fakeUtil.reset();

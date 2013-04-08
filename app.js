@@ -47,9 +47,15 @@ config.securePort = config.securePort || 4040;
 config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 
-logging.configure(config);
+// Check for other required config parameters
+["githubClientId", "githubClientSecret", "sessionSecret"].forEach(function (param) {
+    if (!config[param]) {
+        throw new Error("Configuration error: must specify " + param + " in config.json");
+    }
+});
 
-// Configure the repository
+// Configure submodules
+logging.configure(config);
 repository.configure(config);
 
 // Set up Passport for authentication

@@ -11,9 +11,9 @@ A node.js-powered registry for Brackets extensions.
 4. Register a GitHub API client app. The callback URL must match the hostname of your
    server. For testing, you could enter `https://localhost:4040/auth/github/callback`.
 4. Also in the `config` folder, create a `config.json` file that contains:
-   * `sessionSecret` - key to use for session hashing
-   * `githubClientId` - client id for registered GitHub app
-   * `githubClientSecret` - client secret for register GitHub app
+   * `sessionSecret` - key to use for session hashing (required)
+   * `githubClientId` - client id for registered GitHub app (required)
+   * `githubClientSecret` - client secret for registered GitHub app (required)
    * `hostname` - hostname of the server, defaults to localhost
    * `securePort` - port to run HTTPS on, defaults to 4040
    * `redirectPort` - port to run HTTP on, just redirects to `securePort`, defaults to 4000

@@ -1,4 +1,6 @@
 {{#if registry.length}}
+<p>To install an extension, right-click on the link and choose "Copy Link", then paste it into 
+    the <strong>File &gt; Install Extension...</strong> dialog in Brackets.</p>
 <table class="table">
     <tr>
         <th class="ext-name">Extension</th>
@@ -8,10 +10,16 @@
         <tr>
             <td>
                 <a href="https://s3.amazonaws.com/repository.brackets.io/{{metadata.name}}/{{metadata.name}}-{{metadata.version}}.zip">
-                    {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}
-                    <span class="muted ext-version">{{metadata.version}}</span><br/>
-                    <span class="muted ext-date">{{lastVersionDate this}}</span>
-                </a>
+                    {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}</a>
+                <span class="muted ext-version">{{metadata.version}}</span><br/>
+                <span class="muted ext-author">
+                    by 
+                    {{#if metadata.author.name}}
+                        {{metadata.author.name}} /
+                    {{/if}}
+                    <a href="{{ownerLink owner}}">{{formatUserId owner}}</a>
+                </span>
+                <span class="muted ext-date">on {{lastVersionDate this}}</span>
             </td>
             <td>
                 {{#if metadata.description}}

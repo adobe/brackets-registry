@@ -452,13 +452,6 @@ describe("UI helpers", function () {
         }];
         expect(_lastVersionDate(entry)).toBe("2013-04-02");
     });
-    it("should get the last published date from a registry entry with the date in string format", function () {
-        entry.versions = [{
-            version: "1.0.0",
-            published: "2013-04-02T23:35:21.727Z"
-        }];
-        expect(_lastVersionDate(entry)).toBe("2013-04-02");
-    });
     it("should return empty string (and not crash) if some data is missing", function () {
         entry.versions = [];
         expect(_lastVersionDate(entry)).toBe("");

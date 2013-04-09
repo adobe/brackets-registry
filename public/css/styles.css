@@ -9,6 +9,8 @@ body {
 .extension-list .ext-desc {
     width: 70%;
 }
-.extension-list .ext-version, .extension-list .ext-date {
+.extension-list .ext-version,
+.extension-list .ext-date,
+.extension-list .ext-author {
     font-size: 0.8em;
 }

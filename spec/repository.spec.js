@@ -79,7 +79,8 @@ describe("Repository", function () {
             
             // toBeCloseTo with precision -4 means that we're allowing anything less than 10
             // seconds of difference to pass
-            expect(registered.versions[0].published.getTime()).toBeCloseTo(new Date().getTime(), -4);
+            var pubDate = new Date(registered.versions[0].published);
+            expect(pubDate.getTime()).toBeCloseTo(new Date().getTime(), -4);
             
             var storage = repository.__get__("storage");
             expect(storage.files["basic-valid-extension/basic-valid-extension-1.0.0.zip"]).toEqual(basicValidExtension);
@@ -140,7 +141,8 @@ describe("Repository", function () {
                 
                 // toBeCloseTo with precision -4 means that we're allowing anything less than 10
                 // seconds of difference to pass
-                expect(entry.versions[1].published.getTime()).toBeCloseTo(new Date().getTime(), -4);
+                var pubDate = new Date(entry.versions[1].published);
+                expect(pubDate.getTime()).toBeCloseTo(new Date().getTime(), -4);
                 
                 done();
             });

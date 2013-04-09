@@ -438,23 +438,16 @@ describe("UI helpers", function () {
     it("should get the last published date from a registry entry with one version", function () {
         entry.versions = [{
             version: "1.0.0",
-            published: new Date("2013-04-02T23:35:21.727Z")
+            published: "2013-04-02T23:35:21.727Z"
         }];
         expect(_lastVersionDate(entry)).toBe("2013-04-02");
     });
     it("should get the last published date from a registry entry with multiple versions", function () {
         entry.versions = [{
             version: "1.0.0",
-            published: new Date("2013-03-31T23:35:21.727Z")
+            published: "2013-03-31T23:35:21.727Z"
         }, {
             version: "2.0.0",
-            published: new Date("2013-04-02T23:35:21.727Z")
-        }];
-        expect(_lastVersionDate(entry)).toBe("2013-04-02");
-    });
-    it("should get the last published date from a registry entry with the date in string format", function () {
-        entry.versions = [{
-            version: "1.0.0",
             published: "2013-04-02T23:35:21.727Z"
         }];
         expect(_lastVersionDate(entry)).toBe("2013-04-02");

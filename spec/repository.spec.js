@@ -262,7 +262,7 @@ describe("Repository", function () {
             setValidationResult({
                 metadata: {
                     name: "super-awesome",
-                    title: "Super Awesome!",
+                    title: "Super awesome!",
                     description: "It's awesomer.",
                     version: "1.0.0"
                 }

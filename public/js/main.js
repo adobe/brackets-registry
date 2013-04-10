@@ -40,6 +40,13 @@ $(function () {
                         $(".extension-list").html(content);
                     });
             });
+        },
+        accept: function (file, done) {
+            if (!file.name.match(/\.zip$/i)) {
+                done("Extension packages must be zip files.");
+            } else {
+                done();
+            }
         }
     };
 });

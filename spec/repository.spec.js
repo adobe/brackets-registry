@@ -250,30 +250,40 @@ describe("Repository", function () {
     it("should not allow two packages with the same title, even from the same owner", function (done) {
         setValidationResult({
             metadata: {
-                name: "superawesome",
-                title: "Super Awesome!",
-                description: "It's awesome.",
-                version: "1.0.0"
+                name: "anotherpkg",
+                version: "2.1.1"
             }
         });
         
         repository.addPackage("nopackage.zip", username, function (err, entry) {
             expect(err).toBeNull();
+            
             setValidationResult({
                 metadata: {
-                    name: "super-awesome",
-                    title: "Super awesome!",
-                    description: "It's awesomer.",
+                    name: "superawesome",
+                    title: "Super Awesome!",
+                    description: "It's awesome.",
                     version: "1.0.0"
                 }
             });
-            
             repository.addPackage("nopackage.zip", username, function (err, entry) {
-                expect(err).not.toBeNull();
-                expect(err.message).toEqual("VALIDATION_FAILED");
-                expect(err.errors.length).toEqual(1);
-                expect(err.errors[0][0]).toEqual("DUPLICATE_TITLE");
-                done();
+                expect(err).toBeNull();
+                setValidationResult({
+                    metadata: {
+                        name: "super-awesome",
+                        title: "Super awesome!",
+                        description: "It's awesomer.",
+                        version: "1.0.0"
+                    }
+                });
+            
+                repository.addPackage("nopackage.zip", username, function (err, entry) {
+                    expect(err).not.toBeNull();
+                    expect(err.message).toEqual("VALIDATION_FAILED");
+                    expect(err.errors.length).toEqual(1);
+                    expect(err.errors[0][0]).toEqual("DUPLICATE_TITLE");
+                    done();
+                });
             });
         });
     });

@@ -48,7 +48,7 @@ routes.__set__("_mapError", function (key) { return key; });
 routes.__set__("_formatError", function (err) { return err; });
 
 describe("routes", function () {
-    var req, res, mockRepository, acceptable = { html: true };
+    var req, uploadReq, res, mockRepository, acceptable;
     var mockRegistry = {
         "another-extension": {
             metadata: {
@@ -88,6 +88,8 @@ describe("routes", function () {
 
     beforeEach(function () {
         lastDeleted = null;
+        acceptable = { html: true };
+        
         
         this.addMatchers({
             toBeSortedEntriesFrom: function (expected) {
@@ -139,12 +141,27 @@ describe("routes", function () {
                 return ok;
             }
         });
-        req = {
-            logout: createSpy("req.logout"),
-            accepts: function (type) {
-                return acceptable[type] || false;
+        
+        function createReq() {
+            return {
+                logout: createSpy("req.logout"),
+                accepts: function (type) {
+                    return acceptable[type] || false;
+                }
+            };
+        }
+            
+        req = createReq();
+        uploadReq = createReq();
+        uploadReq.user = "github:someuser";
+        uploadReq.files = {
+            extensionPackage: {
+                path: "/tmp/s0m3g4rb4g3n4m3",
+                name: "my-extension.zip",
+                size: 1000
             }
         };
+
         res = {
             redirect: createSpy("res.redirect"),
             render: createSpy("res.render"),
@@ -163,7 +180,6 @@ describe("routes", function () {
     
     afterEach(function () {
         routes.__set__("repository", repository);
-        acceptable = { html: true };
     });
     
     it("should redirect to home page on successful authentication", function () {
@@ -230,28 +246,14 @@ describe("routes", function () {
     });
     
     it("should pass uploaded file to the repository", function () {
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         expect(mockRepository.addPackage).toHaveBeenCalled();
-        expect(mockRepository.addPackage.mostRecentCall.args[0]).toBe("/path/to/extension.zip");
+        expect(mockRepository.addPackage.mostRecentCall.args[0]).toBe("/tmp/s0m3g4rb4g3n4m3");
         expect(mockRepository.addPackage.mostRecentCall.args[1]).toBe("github:someuser");
     });
     
     it("should render upload success page with entry data if upload succeeded", function () {
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             entry = {
@@ -263,7 +265,7 @@ describe("routes", function () {
                 versions: [{ version: "1.0.0" }]
             };
         callback(null, entry);
-        expect(lastDeleted).toEqual("/path/to/extension.zip");
+        expect(lastDeleted).toEqual("/tmp/s0m3g4rb4g3n4m3");
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadSucceeded");
         expect(res.render.mostRecentCall.args[1]).toEqual({ entry: entry });
@@ -271,14 +273,7 @@ describe("routes", function () {
     
     it("should return entry data as JSON if upload succeeded and JSON was requested", function () {
         acceptable = { json: true };
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             entry = {
@@ -290,25 +285,18 @@ describe("routes", function () {
                 versions: [{ version: "1.0.0" }]
             };
         callback(null, entry);
-        expect(lastDeleted).toEqual("/path/to/extension.zip");
+        expect(lastDeleted).toEqual("/tmp/s0m3g4rb4g3n4m3");
         expect(res.render).not.toHaveBeenCalled();
         expect(res.send).toHaveBeenCalledWith({ entry: entry });
     });
 
     it("should render upload failure page with 400 error if upload failed", function () {
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("REGISTRY_NOT_LOADED");
         callback(err, null);
-        expect(lastDeleted).toEqual("/path/to/extension.zip");
+        expect(lastDeleted).toEqual("/tmp/s0m3g4rb4g3n4m3");
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
@@ -316,19 +304,12 @@ describe("routes", function () {
     });
 
     it("should render upload failure page with 401 error if upload failed due to auth error", function () {
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("NOT_AUTHORIZED");
         callback(err, null);
-        expect(lastDeleted).toEqual("/path/to/extension.zip");
+        expect(lastDeleted).toEqual("/tmp/s0m3g4rb4g3n4m3");
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
@@ -337,19 +318,12 @@ describe("routes", function () {
 
     it("should return errors as JSON with 400 error if upload failed and JSON was requested", function () {
         acceptable = { json: true };
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("REGISTRY_NOT_LOADED");
         callback(err, null);
-        expect(lastDeleted).toEqual("/path/to/extension.zip");
+        expect(lastDeleted).toEqual("/tmp/s0m3g4rb4g3n4m3");
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).not.toHaveBeenCalled();
         expect(res.send).toHaveBeenCalledWith({ errors: ["REGISTRY_NOT_LOADED"] });
@@ -357,14 +331,7 @@ describe("routes", function () {
 
     it("should return errors as JSON with 401 error if upload failed due to authorization failure and JSON was requested", function () {
         acceptable = { json: true };
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("NOT_AUTHORIZED");
@@ -375,18 +342,11 @@ describe("routes", function () {
     });
 
     it("should render upload failure page with 400 error if upload failed and there are multiple errors", function () {
-        req.user = "github:someuser";
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        _upload(uploadReq, res);
         
         var callback = mockRepository.addPackage.mostRecentCall.args[2],
             err = new Error("VALIDATION_FAILED");
-        err.errors = [["MISSING_PACKAGE_NAME", "/path/to/extension.zip"], ["INVALID_VERSION_NUMBER", "x.y.z"]];
+        err.errors = [["MISSING_PACKAGE_NAME", "/tmp/s0m3g4rb4g3n4m3"], ["INVALID_VERSION_NUMBER", "x.y.z"]];
         callback(err, null);
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).toHaveBeenCalled();
@@ -394,14 +354,13 @@ describe("routes", function () {
         var args = res.render.mostRecentCall.args;
         expect(args[0]).toBe("uploadFailed");
         expect(args[1].errors[0]).toBe("VALIDATION_FAILED");
-        expect(args[1].errors[1]).toEqual(["MISSING_PACKAGE_NAME", "/path/to/extension.zip"]);
+        expect(args[1].errors[1]).toEqual(["MISSING_PACKAGE_NAME", "/tmp/s0m3g4rb4g3n4m3"]);
         expect(args[1].errors[2]).toEqual(["INVALID_VERSION_NUMBER", "x.y.z"]);
     });
 
     it("should render upload failure page with 400 error if no file is received", function () {
-        req.user = "github:someuser";
-        req.files = {};
-        _upload(req, res);
+        uploadReq.files = {};
+        _upload(uploadReq, res);
         expect(res.status).toHaveBeenCalledWith(400);
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
@@ -409,16 +368,20 @@ describe("routes", function () {
     });
     
     it("should return 401 and render failure page if attempting to upload when user is not logged in", function () {
-        req.files = {
-            extensionPackage: {
-                path: "/path/to/extension.zip",
-                size: 1000
-            }
-        };
-        _upload(req, res);
+        delete uploadReq.user;
+        _upload(uploadReq, res);
         expect(res.render).toHaveBeenCalledWith("authFailed", undefined);
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.set).toHaveBeenCalledWith("WWW-Authenticate", "OAuth realm='https://registry.brackets.io'");
+    });
+    
+    it("should return 400 and render failure page if attempting to upload a file with a non-zip extension", function () {
+        uploadReq.files.extensionPackage.name = "some-image.png";
+        _upload(uploadReq, res);
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("INVALID_FILE_TYPE");
     });
 });
 

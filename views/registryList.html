@@ -17,15 +17,23 @@
                     {{#if metadata.author.name}}
                         {{metadata.author.name}} /
                     {{/if}}
-                    <a href="{{ownerLink owner}}">{{formatUserId owner}}</a>
+                    <a href="{{ownerLink}}">{{formatUserId}}</a>
                 </span>
-                <span class="muted ext-date">on {{lastVersionDate this}}</span>
+                <span class="muted ext-date">on {{lastVersionDate}}</span>
             </td>
             <td>
                 {{#if metadata.description}}
                     {{metadata.description}}
                 {{else}}
                     <span class="muted"><em>No description</em></span>
+                {{/if}}
+                {{#if metadata.keywords.length}}
+                    <br/>
+                    <span class="ext-keywords">Keywords:
+                    {{#each metadata.keywords}}
+                        {{.}}
+                    {{/each}}
+                    </span>
                 {{/if}}
             </td>
         </tr>

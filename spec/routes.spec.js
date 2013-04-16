@@ -26,9 +26,10 @@
 
 "use strict";
 
-var rewire = require("rewire"),
-    routes = rewire("../lib/routes"),
-    fs     = require("fs");
+var rewire         = require("rewire"),
+    routes         = rewire("../lib/routes"),
+    registry_utils = require("../lib/registry_utils"),
+    fs             = require("fs");
 
 var repository = routes.__get__("repository");
 
@@ -39,9 +40,9 @@ var _index = routes.__get__("_index"),
     _authFailed = routes.__get__("_authFailed"),
     _logout = routes.__get__("_logout"),
     _upload = routes.__get__("_upload"),
-    _lastVersionDate = routes.__get__("_lastVersionDate"),
-    _formatUserId = routes.__get__("_formatUserId"),
-    _ownerLink = routes.__get__("_ownerLink");
+    lastVersionDate = registry_utils.lastVersionDate,
+    formatUserId = registry_utils.formatUserId,
+    ownerLink = registry_utils.ownerLink;
 
 // Don't map the keys to human-readable strings.
 routes.__set__("_mapError", function (key) { return key; });
@@ -385,7 +386,7 @@ describe("routes", function () {
     });
 });
 
-describe("UI helpers", function () {
+describe("route utilities", function () {
     var entry;
     
     beforeEach(function () {
@@ -403,7 +404,7 @@ describe("UI helpers", function () {
             version: "1.0.0",
             published: "2013-04-02T23:35:21.727Z"
         }];
-        expect(_lastVersionDate(entry)).toBe("2013-04-02");
+        expect(lastVersionDate.call(entry)).toBe("2013-04-02");
     });
     it("should get the last published date from a registry entry with multiple versions", function () {
         entry.versions = [{
@@ -413,17 +414,17 @@ describe("UI helpers", function () {
             version: "2.0.0",
             published: "2013-04-02T23:35:21.727Z"
         }];
-        expect(_lastVersionDate(entry)).toBe("2013-04-02");
+        expect(lastVersionDate.call(entry)).toBe("2013-04-02");
     });
     it("should return empty string (and not crash) if some data is missing", function () {
         entry.versions = [];
-        expect(_lastVersionDate(entry)).toBe("");
+        expect(lastVersionDate.call(entry)).toBe("");
     });
 
     it("should format the owner name", function () {
-        expect(_formatUserId(entry.owner)).toBe("someuser (github)");
+        expect(formatUserId.call(entry)).toBe("someuser (github)");
     });
     it("should return a link for a github owner", function () {
-        expect(_ownerLink(entry.owner)).toBe("https://github.com/someuser");
+        expect(ownerLink.call(entry)).toBe("https://github.com/someuser");
     });
 });

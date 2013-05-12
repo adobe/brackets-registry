@@ -12,13 +12,7 @@
                 <a href="https://s3.amazonaws.com/repository.brackets.io/{{metadata.name}}/{{metadata.name}}-{{metadata.version}}.zip">
                     {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}</a>
                 <span class="muted ext-version">{{metadata.version}}</span><br/>
-                <span class="muted ext-author">
-                    by 
-                    {{#if metadata.author.name}}
-                        {{metadata.author.name}} /
-                    {{/if}}
-                    <a href="{{ownerLink}}">{{formatUserId}}</a>
-                </span>
+                <span class="muted ext-author">by {{{authorInfo}}}</span>
                 <span class="muted ext-date">on {{lastVersionDate}}</span>
             </td>
             <td>

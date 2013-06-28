@@ -46,6 +46,9 @@ config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
 config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
+config.repositoryBaseURL = config.repositoryBaseURL || "";
+
+console.log("RBURL", config.repositoryBaseURL);
 
 // Check for other required config parameters
 ["githubClientId", "githubClientSecret", "sessionSecret"].forEach(function (param) {
@@ -106,7 +109,7 @@ app.configure(function () {
 });
 
 // Set up routes
-routes.setup(app);
+routes.setup(app, config);
 
 // Start the HTTPS server
 https.createServer({key: key, cert: cert}, app).listen(config.securePort);

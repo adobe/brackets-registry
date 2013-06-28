@@ -48,8 +48,6 @@ config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 config.repositoryBaseURL = config.repositoryBaseURL || "";
 
-console.log("RBURL", config.repositoryBaseURL);
-
 // Check for other required config parameters
 ["githubClientId", "githubClientSecret", "sessionSecret"].forEach(function (param) {
     if (!config[param]) {

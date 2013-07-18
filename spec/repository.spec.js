@@ -144,6 +144,9 @@ describe("Repository", function () {
                 var pubDate = new Date(entry.versions[1].published);
                 expect(pubDate.getTime()).toBeCloseTo(new Date().getTime(), -4);
                 
+                var storage = repository.__get__("storage");
+                expect(storage.files["basic-valid-extension/basic-valid-extension-1.0.0.zip"]).toEqual(basicValidExtension);
+                expect(storage.files["basic-valid-extension/basic-valid-extension-2.0.0.zip"]).toBeDefined();
                 done();
             });
         });

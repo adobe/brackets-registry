@@ -104,6 +104,11 @@ app.configure(function () {
     app.use(app.router);
     // JSLint doesn't like "express.static" because static is a keyword.
     app.use(express["static"](path.resolve(__dirname, "public")));
+    
+    // This is used for local testing with the FileStorage
+    if (config.directory) {
+        app.use("/files", express["static"](path.resolve(__dirname, config.directory)));
+    }
 });
 
 // Set up routes

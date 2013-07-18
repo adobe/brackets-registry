@@ -48,6 +48,11 @@ var _index = routes.__get__("_index"),
 routes.__set__("_mapError", function (key) { return key; });
 routes.__set__("_formatError", function (err) { return err; });
 
+var testRepositoryBaseURL = "http://brackets.io/repositoryForTesting";
+routes.__set__("config", {
+    repositoryBaseURL: testRepositoryBaseURL
+});
+
 describe("routes", function () {
     var req, uploadReq, res, mockRepository, acceptable;
     var mockRegistry = {
@@ -196,6 +201,7 @@ describe("routes", function () {
         expect(args[0]).toBe("index");
         expect(args[1].user).toBeUndefined();
         expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
+        expect(args[1].repositoryBaseURL).toBe(testRepositoryBaseURL);
     });
     
     it("should render and inject correct data into the home page when user is authenticated", function () {
@@ -223,6 +229,7 @@ describe("routes", function () {
         expect(args[0]).toBe("registryList");
         expect(args[1].layout).toBe(false);
         expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
+        expect(args[1].repositoryBaseURL).toBe(testRepositoryBaseURL);
     });
     
     it("should return 406 Not Acceptable if neither HTML or JSON is specified by client", function () {

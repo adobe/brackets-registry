@@ -9,7 +9,7 @@
     {{#each registry}}
         <tr>
             <td>
-                <a href="https://s3.amazonaws.com/repository.brackets.io/{{metadata.name}}/{{metadata.name}}-{{metadata.version}}.zip">
+                <a href="{{../repositoryBaseURL}}/{{metadata.name}}/{{metadata.name}}-{{metadata.version}}.zip">
                     {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}</a>
                 <span class="muted ext-version">{{metadata.version}}</span><br/>
                 <span class="muted ext-author">by {{{authorInfo}}}</span>

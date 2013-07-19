@@ -26,10 +26,12 @@
     "brackets-extensibility": ">0.23.0",
     "semver": "~1.1.4",
     "aws-sdk": "~0.9.7-pre.8",
-    "replify": "~1.0.2"
+    "replify": "~1.0.2",
+    "clone": "~0.1.9"
   },
   "devDependencies": {
     "jasmine-node": "~1.4.0",
-    "rewire": "~1.1.2"
+    "rewire": "~1.1.2",
+    "fs-extra": "~0.6.3"
   }
 }

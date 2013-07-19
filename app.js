@@ -47,10 +47,12 @@ config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 config.repositoryBaseURL = config.repositoryBaseURL || "";
 
-var callbackScheme = "https://";
+var callbackScheme = "https://",
+    callbackPort = config.securePort;
 // We just use HTTP on localhost for testing
 if (config.hostname === "localhost" && config.port) {
     callbackScheme = "http://";
+    callbackPort = config.port;
 }
 
 if (!config.insecure) {
@@ -88,7 +90,7 @@ passport.use(
         {
             clientID: config.githubClientId,
             clientSecret: config.githubClientSecret,
-            callbackURL: callbackScheme + config.hostname + ":" + config.securePort + "/auth/github/callback"
+            callbackURL: callbackScheme + config.hostname + ":" + callbackPort + "/auth/github/callback"
         },
         function (accessToken, refreshToken, profile, done) {
             done(null, "github:" + profile.username);

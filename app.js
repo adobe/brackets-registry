@@ -38,15 +38,27 @@ var express = require("express"),
     logging = require("./lib/logging");
 
 // Load cert and secret configuration
-var key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key")),
-    cert = fs.readFileSync(path.resolve(__dirname, "config/certificate.cert")),
-    config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json")));
+var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json"))),
+    key, cert;
 
 config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
 config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 config.repositoryBaseURL = config.repositoryBaseURL || "";
+
+var callbackScheme = "https://",
+    callbackPort = config.securePort;
+// We just use HTTP on localhost for testing
+if (config.hostname === "localhost" && config.port) {
+    callbackScheme = "http://";
+    callbackPort = config.port;
+}
+
+if (!config.insecure) {
+    key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key"));
+    cert = fs.readFileSync(path.resolve(__dirname, "config/certificate.cert"));
+}
 
 // Check for other required config parameters
 ["githubClientId", "githubClientSecret", "sessionSecret"].forEach(function (param) {
@@ -78,7 +90,7 @@ passport.use(
         {
             clientID: config.githubClientId,
             clientSecret: config.githubClientSecret,
-            callbackURL: "https://" + config.hostname + ":" + config.securePort + "/auth/github/callback"
+            callbackURL: callbackScheme + config.hostname + ":" + callbackPort + "/auth/github/callback"
         },
         function (accessToken, refreshToken, profile, done) {
             done(null, "github:" + profile.username);
@@ -114,17 +126,23 @@ app.configure(function () {
 // Set up routes
 routes.setup(app, config);
 
-// Start the HTTPS server
-https.createServer({key: key, cert: cert}, app).listen(config.securePort);
+if (config.hostname === "localhost" && config.port) {
+    http.createServer(app).listen(config.port);
+    console.log("HTTP Listening on ", config.port);
+} else {
+    // Start the HTTPS server
+    https.createServer({key: key, cert: cert}, app).listen(config.securePort);
+    console.log("HTTPS Listening on ", config.securePort);
 
-// Redirect HTTP to HTTPS
-http.createServer(function (req, res) {
-    res.writeHead(301, {
-        'Content-Type': 'text/plain',
-        'Location': 'https://' + config.hostname + ":" + config.securePort + req.url
-    });
-    res.end('Redirecting to SSL\n');
-}).listen(config.redirectPort);
+    // Redirect HTTP to HTTPS
+    http.createServer(function (req, res) {
+        res.writeHead(301, {
+            'Content-Type': 'text/plain',
+            'Location': 'https://' + config.hostname + ":" + config.securePort + req.url
+        });
+        res.end('Redirecting to SSL\n');
+    }).listen(config.redirectPort);
+}
 
 // If it's configured, turn on the REPL for localhost
 if (config.repl) {

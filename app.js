@@ -127,7 +127,7 @@ app.configure(function () {
 routes.setup(app, config);
 
 if (config.hostname === "localhost" && config.port) {
-    http.createServer(app).listen(config.port)
+    http.createServer(app).listen(config.port);
     console.log("HTTP Listening on ", config.port);
 } else {
     // Start the HTTPS server

@@ -48,9 +48,12 @@ var _index = routes.__get__("_index"),
 routes.__set__("_mapError", function (key) { return key; });
 routes.__set__("_formatError", function (err) { return err; });
 
+var customFooter = "<h1>Brought to you by the number 9 and the letter Q</h1>";
 var testRepositoryBaseURL = "http://brackets.io/repositoryForTesting";
+
 routes.__set__("config", {
-    repositoryBaseURL: testRepositoryBaseURL
+    repositoryBaseURL: testRepositoryBaseURL,
+    customFooter: customFooter
 });
 
 describe("routes", function () {
@@ -212,6 +215,7 @@ describe("routes", function () {
         expect(args[0]).toBe("index");
         expect(args[1].user).toBe("someuser (github)");
         expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
+        expect(args[1].customFooter).toBe(customFooter);
     });
     
     it("should return registry listing when home page requested by client only accepting json", function () {
@@ -248,7 +252,7 @@ describe("routes", function () {
     
     it("should return 401 and render failure page if auth failed", function () {
         _authFailed(req, res);
-        expect(res.render).toHaveBeenCalledWith("authFailed", undefined);
+        expect(res.render).toHaveBeenCalledWith("authFailed", { customFooter: customFooter });
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.set).toHaveBeenCalledWith("WWW-Authenticate", "OAuth realm='https://registry.brackets.io'");
     });
@@ -276,7 +280,7 @@ describe("routes", function () {
         expect(lastDeleted).toEqual("/tmp/s0m3g4rb4g3n4m3");
         expect(res.render).toHaveBeenCalled();
         expect(res.render.mostRecentCall.args[0]).toBe("uploadSucceeded");
-        expect(res.render.mostRecentCall.args[1]).toEqual({ entry: entry });
+        expect(res.render.mostRecentCall.args[1]).toEqual({ entry: entry, customFooter: customFooter });
     });
     
     it("should return entry data as JSON if upload succeeded and JSON was requested", function () {
@@ -378,7 +382,7 @@ describe("routes", function () {
     it("should return 401 and render failure page if attempting to upload when user is not logged in", function () {
         delete uploadReq.user;
         _upload(uploadReq, res);
-        expect(res.render).toHaveBeenCalledWith("authFailed", undefined);
+        expect(res.render).toHaveBeenCalledWith("authFailed", { customFooter: customFooter });
         expect(res.status).toHaveBeenCalledWith(401);
         expect(res.set).toHaveBeenCalledWith("WWW-Authenticate", "OAuth realm='https://registry.brackets.io'");
     });

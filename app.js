@@ -47,6 +47,13 @@ config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 config.repositoryBaseURL = config.repositoryBaseURL || "";
 
+// Load the custom footer HTML from disk, if it's defined.
+if (config.customFooter) {
+    config.customFooter = fs.readFileSync(config.customFooter);
+} else {
+    config.customFooter = "";
+}
+
 var callbackScheme = "https://",
     callbackPort = config.securePort;
 // We just use HTTP on localhost for testing

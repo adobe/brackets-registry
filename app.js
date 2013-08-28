@@ -39,13 +39,15 @@ var express = require("express"),
 
 // Load cert and secret configuration
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json"))),
-    key, cert;
+    key,
+    cert;
 
 config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
 config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 config.repositoryBaseURL = config.repositoryBaseURL || "";
+config.helpURL = config.helpURL || "";
 
 // Load the custom footer HTML from disk, if it's defined.
 if (config.customFooter) {

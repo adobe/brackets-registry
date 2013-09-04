@@ -213,7 +213,7 @@ describe("routes", function () {
         expect(res.render).toHaveBeenCalled();
         var args = res.render.mostRecentCall.args;
         expect(args[0]).toBe("index");
-        expect(args[1].user).toBe("someuser (github)");
+        expect(args[1].user).toBe("someuser");
         expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
         expect(args[1].customFooter).toBe(customFooter);
     });
@@ -433,7 +433,7 @@ describe("route utilities", function () {
     });
 
     it("should format the owner name", function () {
-        expect(formatUserId.call(entry)).toBe("someuser (github)");
+        expect(formatUserId.call(entry)).toBe("someuser");
     });
     it("should return a link for a github owner", function () {
         expect(ownerLink.call(entry)).toBe("https://github.com/someuser");

@@ -33,3 +33,7 @@ You'll have the Express "app" available as `app`, and the repository module avai
 ## DropzoneJS
 
 This project uses a slightly modified version of [DropzoneJS](https://github.com/enyo/dropzone). If you need to update it, take a look at the dropzone.js file for CHANGED comments.
+
+## Glyphicons
+
+This repository also includes the [Glyphicons](http://glyphicons.com/) Halflings set that ships with [Bootstrap](http://getbootstrap.com/). Thank you to all of the contributors to open source software that we use.

@@ -40,6 +40,7 @@ var _index = routes.__get__("_index"),
     _authFailed = routes.__get__("_authFailed"),
     _logout = routes.__get__("_logout"),
     _upload = routes.__get__("_upload"),
+	_rss = routes.__get__("_rss"),
     lastVersionDate = registry_utils.lastVersionDate,
     formatUserId = registry_utils.formatUserId,
     ownerLink = registry_utils.ownerLink;
@@ -395,6 +396,18 @@ describe("routes", function () {
         expect(res.render.mostRecentCall.args[0]).toBe("uploadFailed");
         expect(res.render.mostRecentCall.args[1].errors[0]).toBe("INVALID_FILE_TYPE");
     });
+	
+	it("should render XML when RSS is requested", function () {
+		_rss(req, res);
+		expect(res.render).not.toHaveBeenCalled();
+	});
+
+	it("should render extension in XML when RSS is requested", function () {
+		_rss(req, res);
+		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[my-extension v1\.0\.0\]\]><\/title>/);
+		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[another-extension v2\.0\.0\]\]><\/title>/);
+	});
+	
 });
 
 describe("route utilities", function () {

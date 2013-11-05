@@ -27,7 +27,8 @@
     "semver": "2.x",
     "aws-sdk": "~0.9.7-pre.8",
     "replify": "~1.0.2",
-    "clone": "~0.1.9"
+    "clone": "~0.1.9",
+    "rss": "0.2.1"
   },
   "devDependencies": {
     "jasmine-node": "~1.11.0",

@@ -19,8 +19,8 @@ A node.js-powered registry for Brackets extensions.
    * `redirectPort` - port to run HTTP on, just redirects to `securePort`, defaults to 4000
    * `rss.title` - Title used for RSS feed, defaults to ''
    * `rss.description` - Description used for RSS feed, defaults to ''
-   * `rss.feed_url` - URL used for RSS feed, defaults to '' (this is the URL used in the feed itself, not the URL used for the feed)
-   * `rss.site_url` - URL used for main site URL in the RSS feed, defaults to '' (see note above, both URLs here are used in the metadata of the feed)
+   * `rss.feedURL` - URL used for RSS feed, defaults to '' (this is the URL used in the feed itself, not the URL used for the feed)
+   * `rss.siteURL` - URL used for main site URL in the RSS feed, defaults to '' (see note above, both URLs here are used in the metadata of the feed)
 
 5. `npm start`
 

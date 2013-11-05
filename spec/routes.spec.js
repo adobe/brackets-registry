@@ -400,8 +400,14 @@ describe("routes", function () {
 	it("should render XML when RSS is requested", function () {
 		_rss(req, res);
 		expect(res.render).not.toHaveBeenCalled();
-
 	});
+
+	it("should render extension in XML when RSS is requested", function () {
+		_rss(req, res);
+		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[my-extension v1\.0\.0\]\]><\/title>/);
+		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[another-extension v2\.0\.0\]\]><\/title>/);
+	});
+	
 });
 
 describe("route utilities", function () {

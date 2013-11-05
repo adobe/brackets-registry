@@ -397,8 +397,8 @@ describe("routes", function () {
         expect(res.render.mostRecentCall.args[1].errors[0]).toBe("INVALID_FILE_TYPE");
     });
 	
-	it("should render XML when RSS is requested", function() {
-		_rss(req,res);
+	it("should render XML when RSS is requested", function () {
+		_rss(req, res);
 		expect(res.render).not.toHaveBeenCalled();
 
 	});

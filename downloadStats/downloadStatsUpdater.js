@@ -26,47 +26,51 @@ indent: 4, maxerr: 50 */
 
 "use strict";
 
-var fs = require('fs'),
+var fs = require("fs"),
     path = require("path"),
     request = require("request-json"),
-    LogfileProcessor = require('./logfileProcessor').LogfileProcessor;
+    temporary = require("temporary"),
+    LogfileProcessor = require("./logfileProcessor").LogfileProcessor;
 
 // read the config
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../config/config.json")));
 
 // Constants
-var TEMPFOLDERNAME = './tempLogFiles';
 var DOWNLOADSTATSFILENAME = "downloadStats.json";
 
 // create temp folder for logfiles
-if (fs.mkdir(TEMPFOLDERNAME, function (err) {
-    if (err) {
+var tempFolder = config.tempFolder;
+if (config.tempFolder) {
+    try {
+        fs.mkdirSync(tempFolder);
+    } catch(Exception) {
         console.log('Tempfolder already exists');
     }
+} else {
+    tempFolder = new temporary.Dir().path;
+    console.log(tempFolder);
+}
 
-    var logfileProcessor = new LogfileProcessor(config);
-    
-    var promise = logfileProcessor.downloadLogfiles(TEMPFOLDERNAME);
-    promise.then(function () {
-        logfileProcessor.extractDownloadStats(TEMPFOLDERNAME).then(function (downloadStats) {
-            fs.writeFileSync(DOWNLOADSTATSFILENAME, JSON.stringify(downloadStats));
-            console.log("Result:", JSON.stringify(downloadStats));
+var logfileProcessor = new LogfileProcessor(config);
 
-            // posting works only from localhost
-            var client = request.newClient("http://localhost:" + config.port);
-            client.sendFile("/stats", path.resolve(__dirname, DOWNLOADSTATSFILENAME), null, function (err, res, body) {
-                if (err) {
-                    console.error(err);
-                } else {
-                    console.log("File uploaded");
-                }
-            });
+var promise = logfileProcessor.downloadLogfiles(tempFolder);
+promise.then(function () {
+    logfileProcessor.extractDownloadStats(tempFolder).then(function (downloadStats) {
+        fs.writeFileSync(DOWNLOADSTATSFILENAME, JSON.stringify(downloadStats));
+//        console.log("Result:", JSON.stringify(downloadStats));
 
-            if (!config['debug.keepTempFolder']) {
-                fs.rmdirSync(TEMPFOLDERNAME);
+        // posting works only from localhost
+        var client = request.newClient("http://localhost:" + config.port);
+        client.sendFile("/stats", path.resolve(__dirname, DOWNLOADSTATSFILENAME), null, function (err, res, body) {
+            if (err) {
+                console.error(err);
+            } else {
+                console.log("File uploaded");
             }
         });
-    });
-}));
 
-//updater.postUpdate(downloadStats);
+        if (!config['debug.keepTempFolder']) {
+            fs.rmdirSync(TEMPFOLDERNAME);
+        }
+    });
+});

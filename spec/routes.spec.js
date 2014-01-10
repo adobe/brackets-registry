@@ -41,6 +41,7 @@ var _index = routes.__get__("_index"),
     _logout = routes.__get__("_logout"),
     _upload = routes.__get__("_upload"),
 	_rss = routes.__get__("_rss"),
+    _stats = routes.__get__("_stats"),
     lastVersionDate = registry_utils.lastVersionDate,
     formatUserId = registry_utils.formatUserId,
     ownerLink = registry_utils.ownerLink;
@@ -408,6 +409,19 @@ describe("routes", function () {
 		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[another-extension v2\.0\.0\]\]><\/title>/);
 	});
 	
+    it("should not accept post request to update the download stats other than localhost/127.0.0.1", function () {
+        req.ip = '10.32.1.2';
+        req.host = 'www.adobe.com';
+        _stats(req, res);
+        expect(res.send).toHaveBeenCalledWith(403);
+    });
+
+    xit("should accept post request to update the download stats from localhost/127.0.0.1", function () {
+        req.ip = '127.0.0.1';
+        req.host = 'localhost';
+        _stats(req, res);
+        expect(res.send).toHaveBeenCalledWith(201);
+    });
 });
 
 describe("route utilities", function () {

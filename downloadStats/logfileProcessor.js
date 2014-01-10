@@ -71,7 +71,6 @@ LogfileProcessor.prototype = {
                 fileWrittenPromise.resolve();
             });
 
-            console.log("Object:", obj);
             s3.getObject(params).createReadStream().pipe(file);
 
             return fileWrittenPromise.promise;

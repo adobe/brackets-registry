@@ -28,6 +28,7 @@ indent: 4, maxerr: 50 */
 
 var fs = require('fs'),
     path = require("path"),
+    request = require("request-json"),
     LogfileProcessor = require('./logfileProcessor').LogfileProcessor;
 
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../config/config.json")));
@@ -47,7 +48,16 @@ if (fs.mkdir(tempFolderName, function (err) {
         logfileProcessor.extractDownloadStats(tempFolderName).then(function (downloadStats) {
             fs.writeFileSync("downloadStats.json", JSON.stringify(downloadStats));
             console.log("Result:", JSON.stringify(downloadStats));
-            
+
+            var client = request.newClient("http://localhost:1080");
+            client.post("/stats", {path: path.resolve(__dirname, "downloadStats.json")}, function (err, res, body) {
+                if (err) {
+                    console.error(err);
+                } else {
+                    console.log("File uploaded");
+                }
+            });
+
             if (!config['debug.keepTempFolder']) {
                 fs.rmdirSync(tempFolderName);
             }

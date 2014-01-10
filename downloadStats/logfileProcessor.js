@@ -52,7 +52,12 @@ function LogfileProcessor(config) {
 }
 
 LogfileProcessor.prototype = {
-    downloadLogfiles: function (tempFolderName) {
+    /**
+     * @param {String} - tempFolderName temp location to store the logfiles
+     * @param {String} - lastProcessedTimestamp timestamp of the logfile last processed. Should be either 0 (include all)
+     * or something much greater
+     */
+    downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
         var self = this;
 
         var s3 = new AWS.S3.Client({
@@ -82,11 +87,20 @@ LogfileProcessor.prototype = {
             var fq = new FileQueue(100);
 
             var allPromises = data.Contents.map(function (obj) {
-                return _writeLogfileHelper(fq, obj);
+                if (new Date(obj.LastModified) > lastProcessedTimestamp) {
+                    return _writeLogfileHelper(fq, obj);
+                }
             });
 
+            // get the last logfiles timestamp
+            var ts = undefined;
+            if (data.Contents.length) {
+                var lastLogfileObject = data.Contents[data.Contents.length - 1];
+                ts = lastLogfileObject.LastModified;
+            }
+
             Promise.settle(allPromises).then(function () {
-                globalPromise.resolve("Done");
+                globalPromise.resolve(ts);
             });
         });
 

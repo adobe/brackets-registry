@@ -34,6 +34,17 @@ var fs = require("fs"),
 
 // read the config
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../config/config.json")));
+var lastProcessedTimestamp = {};
+
+try {
+    lastProcessedTimestamp = JSON.parse(fs.readFileSync(path.resolve(__dirname, "lastProcessedLogfile.json")));
+
+    if (! lastProcessedTimestamp.ts) {
+        lastProcessedTimestamp.ts = 0;
+    }
+} catch (Exception) {
+    lastProcessedTimestamp.ts = 0;
+}
 
 // Constants
 var DOWNLOADSTATSFILENAME = "downloadStats.json";
@@ -53,8 +64,9 @@ if (config.tempFolder) {
 
 var logfileProcessor = new LogfileProcessor(config);
 
-var promise = logfileProcessor.downloadLogfiles(tempFolder);
-promise.then(function () {
+var promise = logfileProcessor.downloadLogfiles(tempFolder, lastProcessedTimestamp.ts);
+promise.then(function (timestampLastProcessedLogfile) {
+    fs.writeFileSync(path.resolve(__dirname, "lastProcessedLogfile.json"), JSON.stringify({ts: Date.parse(timestampLastProcessedLogfile)}));
     logfileProcessor.extractDownloadStats(tempFolder).then(function (downloadStats) {
         fs.writeFileSync(DOWNLOADSTATSFILENAME, JSON.stringify(downloadStats));
 //        console.log("Result:", JSON.stringify(downloadStats));

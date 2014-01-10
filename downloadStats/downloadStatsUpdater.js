@@ -31,26 +31,30 @@ var fs = require('fs'),
     request = require("request-json"),
     LogfileProcessor = require('./logfileProcessor').LogfileProcessor;
 
+// read the config
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../config/config.json")));
 
-// create temp folder for logfiles
-var tempFolderName = './tempLogFiles';
+// Constants
+var TEMPFOLDERNAME = './tempLogFiles';
+var DOWNLOADSTATSFILENAME = "downloadStats.json";
 
-if (fs.mkdir(tempFolderName, function (err) {
+// create temp folder for logfiles
+if (fs.mkdir(TEMPFOLDERNAME, function (err) {
     if (err) {
         console.log('Tempfolder already exists');
     }
 
     var logfileProcessor = new LogfileProcessor(config);
     
-    var promise = logfileProcessor.downloadLogfiles(tempFolderName);
+    var promise = logfileProcessor.downloadLogfiles(TEMPFOLDERNAME);
     promise.then(function () {
-        logfileProcessor.extractDownloadStats(tempFolderName).then(function (downloadStats) {
-            fs.writeFileSync("downloadStats.json", JSON.stringify(downloadStats));
+        logfileProcessor.extractDownloadStats(TEMPFOLDERNAME).then(function (downloadStats) {
+            fs.writeFileSync(DOWNLOADSTATSFILENAME, JSON.stringify(downloadStats));
             console.log("Result:", JSON.stringify(downloadStats));
 
-            var client = request.newClient("http://localhost:1080");
-            client.post("/stats", {path: path.resolve(__dirname, "downloadStats.json")}, function (err, res, body) {
+            // posting works only from localhost
+            var client = request.newClient("http://localhost:" + config.port);
+            client.sendFile("/stats", path.resolve(__dirname, DOWNLOADSTATSFILENAME), null, function (err, res, body) {
                 if (err) {
                     console.error(err);
                 } else {
@@ -59,7 +63,7 @@ if (fs.mkdir(tempFolderName, function (err) {
             });
 
             if (!config['debug.keepTempFolder']) {
-                fs.rmdirSync(tempFolderName);
+                fs.rmdirSync(TEMPFOLDERNAME);
             }
         });
     });

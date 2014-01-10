@@ -26,7 +26,7 @@
     "brackets-extensibility": ">0.31.0",
     "semver": "2.x",
     "aws-sdk": "~2.0.0-rc5",
-    "replify": "~1.0.2",
+    "replify": "~1.1.4",
     "clone": "~0.1.9",
     "rss": "0.2.1",
     "filequeue": "~0.5.0",

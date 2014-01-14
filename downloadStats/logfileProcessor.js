@@ -171,7 +171,7 @@ LogfileProcessor.prototype = {
     },
 
     getRecentDownloads: function (tempFolderName) {
-        var sevenDaysAgo = new Date() - (100 * 7 * 24 * 60 * 60 * 1000),
+        var sevenDaysAgo = new Date() - (7 * 24 * 60 * 60 * 1000),
             recentDownloadsPromise = Promise.defer();
 
         var self = this;
@@ -195,7 +195,7 @@ LogfileProcessor.prototype = {
                     return result;
                 });
 
-                recentDownloads = _.sortBy(recentDownloads, 'totalDownloads').reverse();
+                recentDownloads = _.sortBy(recentDownloads, "totalDownloads").reverse();
                 recentDownloadsPromise.resolve(recentDownloads);
             });
         });

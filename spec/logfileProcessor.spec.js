@@ -52,7 +52,7 @@ describe("LogfileProcessor", function () {
 
         it("Should return the information for 1 Extension and multiple versions", function (done) {
             var logfileProcessor = new LogfileProcessor(config);
-            logfileProcessor.extractDownloadStats(testLogfileDirectory + "/one-extension-multiplie-versions").then(function (downloadStats) {
+            logfileProcessor.extractDownloadStats(testLogfileDirectory + "/one-extension-multiple-versions").then(function (downloadStats) {
                 expect(downloadStats["select-parent"].downloads.versions["1.0.0"]).toBe(1);
                 expect(downloadStats["select-parent"].downloads.versions["1.0.2"]).toBe(1);
                 expect(downloadStats["select-parent"].downloads.versions["1.0.3"]).toBe(1);

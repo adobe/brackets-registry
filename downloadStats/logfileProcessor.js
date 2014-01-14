@@ -26,19 +26,23 @@ indent: 4, maxerr: 50 */
 
 "use strict";
 
-var AWS        = require('aws-sdk'),
-    fs         = require('fs'),
-    path       = require('path'),
-    readline   = require('readline'),
-    FileQueue  = require('filequeue'),
-    eachline   = require('eachline'),
-    Promise    = require("bluebird");
+var AWS        = require("aws-sdk"),
+    fs         = require("fs"),
+    path       = require("path"),
+    readline   = require("readline"),
+    FileQueue  = require("filequeue"),
+    eachline   = require("eachline"),
+    Promise    = require("bluebird"),
+    _          = require("lodash");
 
+// this regex is used to parse AWS access logfiles. A usual line in the logfile looks like the one below.
+// 04db613bd000d07badc32d16138efc3efa3e96c6c3ca18365997ba468a6ac850 repository.brackets.io [19/Jul/2013:16:26:40 +0000] 192.150.22.5 - 5444C2FE39980E28 REST.GET.OBJECT select-parent/select-parent-1.0.0.zip "GET /repository.brackets.io/select-parent/select-parent-1.0.0.zip HTTP/1.1" 200 - 56846 56846 566 268 "-" "-" -
 var regex = /(\S+) (\S+) (\S+ \+\S+\]) (\S+) (\S+) (\S+) (\S+) (\S+) "(\S+) (\S+) (\S+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "(.*)" (\S+)/;
 
 function LogfileProcessor(config) {
-    var accessKeyId = config["aws.accesskey"];
-    var secretAccessKey = config["aws.secretkey"];
+    var accessKeyId = config["aws.accesskey"],
+        secretAccessKey = config["aws.secretkey"];
+
     this.bucketName = config["s3.bucket"];
 
     if (!accessKeyId || !secretAccessKey || !this.bucketName) {
@@ -53,12 +57,18 @@ function LogfileProcessor(config) {
 
 LogfileProcessor.prototype = {
     /**
+     * Download the S3 logfiles into the directory tempFolderName. The lastProcessedTimestamp indicates the last processed logfile.
+     * All previous logfiles will be skipped and not downloaded for further processing.
      * @param {String} - tempFolderName temp location to store the logfiles
      * @param {String} - lastProcessedTimestamp timestamp of the logfile last processed. Should be either 0 (include all)
      * or something much greater
      */
     downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
         var self = this;
+
+        if (!lastProcessedTimestamp) {
+            lastProcessedTimestamp = 0;
+        }
 
         var s3 = new AWS.S3.Client({
             sslEnabled: true
@@ -82,8 +92,6 @@ LogfileProcessor.prototype = {
         }
 
         s3.listObjects({Bucket: self.bucketName}, function(err, data) {
-            console.log("Found", data.Contents.length, "logfile(s)");
-
             var fq = new FileQueue(100);
 
             var allPromises = data.Contents.map(function (obj) {
@@ -93,7 +101,7 @@ LogfileProcessor.prototype = {
             });
 
             // get the last logfiles timestamp
-            var ts = undefined;
+            var ts;
             if (data.Contents.length) {
                 var lastLogfileObject = data.Contents[data.Contents.length - 1];
                 ts = lastLogfileObject.LastModified;
@@ -107,6 +115,12 @@ LogfileProcessor.prototype = {
         return globalPromise.promise;
     },
     
+    /**
+     * Process all the logfiles in tempFolderName. We are extracting the name and version of the extension (derived from the zip filename).
+     *
+     * @param {String} - tempFolderName temp location to store the logfiles
+     * @return {JSON} - {"extensionname": downloads: {versions: {"version": downloadsPerVersion}}}
+     */
     extractDownloadStats: function(tempFolderName) {
         var deferred = Promise.defer();
 
@@ -154,6 +168,39 @@ LogfileProcessor.prototype = {
         });
 
         return deferred.promise;
+    },
+
+    getRecentDownloads: function (tempFolderName) {
+        var sevenDaysAgo = new Date() - (100 * 7 * 24 * 60 * 60 * 1000),
+            recentDownloadsPromise = Promise.defer();
+
+        var self = this;
+
+        // download only the logfiles starting 7 days ago
+        var promise = this.downloadLogfiles(tempFolderName, sevenDaysAgo);
+        promise.then(function (timestampLastProcessedLogfile) {
+            self.extractDownloadStats(tempFolderName).then(function (resultJSON) {
+                // transform to something more suitable
+                console.log(JSON.stringify(resultJSON));
+                var extensionNames = _.keys(resultJSON);
+                var recentDownloads = extensionNames.map(function (extensionName) {
+                    var result = {"extensionName": extensionName};
+
+                    var totalDownloads = 
+                        _.reduce(resultJSON[extensionName].downloads.versions, function (sum, num) {
+                            return sum + num;
+                        });
+
+                    result["totalDownloads"] = totalDownloads;
+                    return result;
+                });
+
+                recentDownloads = _.sortBy(recentDownloads, 'totalDownloads').reverse();
+                recentDownloadsPromise.resolve(recentDownloads);
+            });
+        });
+
+        return recentDownloadsPromise.promise;
     }
 };
 

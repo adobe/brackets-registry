@@ -47,7 +47,7 @@ try {
 }
 
 // Constants
-var DOWNLOADSTATSFILENAME = "downloadStats.json";
+var DOWNLOAD_STATS_FILENAME = "downloadStats.json";
 
 // create temp folder for logfiles
 var tempFolder = config.tempFolder;
@@ -59,7 +59,7 @@ if (config.tempFolder) {
     }
 } else {
     tempFolder = new temporary.Dir().path;
-    console.log(tempFolder);
+    console.log("Using temp directory: (%s)", tempFolder);
 }
 
 var logfileProcessor = new LogfileProcessor(config);
@@ -68,21 +68,23 @@ var promise = logfileProcessor.downloadLogfiles(tempFolder, lastProcessedTimesta
 promise.then(function (timestampLastProcessedLogfile) {
     fs.writeFileSync(path.resolve(__dirname, "lastProcessedLogfile.json"), JSON.stringify({ts: Date.parse(timestampLastProcessedLogfile)}));
     logfileProcessor.extractDownloadStats(tempFolder).then(function (downloadStats) {
-        fs.writeFileSync(DOWNLOADSTATSFILENAME, JSON.stringify(downloadStats));
-//        console.log("Result:", JSON.stringify(downloadStats));
+        logfileProcessor.getRecentDownloads(tempFolder).then(function (json) {
+            downloadStats["recentDownloads"] = json;
+            fs.writeFileSync(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats));
 
-        // posting works only from localhost
-        var client = request.newClient("http://localhost:" + config.port);
-        client.sendFile("/stats", path.resolve(__dirname, DOWNLOADSTATSFILENAME), null, function (err, res, body) {
-            if (err) {
-                console.error(err);
-            } else {
-                console.log("File uploaded");
+            // posting works only from localhost
+            var client = request.newClient("http://localhost:" + config.port);
+            client.sendFile("/stats", path.resolve(__dirname, DOWNLOAD_STATS_FILENAME), null, function (err, res, body) {
+                if (err) {
+                    console.error(err);
+                } else {
+                    console.log("File uploaded");
+                }
+            });
+
+            if (!config['debug.keepTempFolder']) {
+                fs.rmdirSync(tempFolder);
             }
         });
-
-        if (!config['debug.keepTempFolder']) {
-            fs.rmdirSync(TEMPFOLDERNAME);
-        }
     });
 });

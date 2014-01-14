@@ -181,7 +181,6 @@ LogfileProcessor.prototype = {
         promise.then(function (timestampLastProcessedLogfile) {
             self.extractDownloadStats(tempFolderName).then(function (resultJSON) {
                 // transform to something more suitable
-                console.log(JSON.stringify(resultJSON));
                 var extensionNames = _.keys(resultJSON);
                 var recentDownloads = extensionNames.map(function (extensionName) {
                     var result = {"extensionName": extensionName};

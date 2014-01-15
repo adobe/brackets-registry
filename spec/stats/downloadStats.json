@@ -1,0 +1,282 @@
+{
+	"incompatible-version": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 3
+			}
+		}
+	},
+	"long-desc-extension": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 14
+			}
+		}
+	},
+	"malicious-script-extension": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 8
+			}
+		}
+	},
+	"test-quickly": {
+		"downloads": {
+			"versions": {
+				"1.0.2": 6,
+				"1.0.1": 1,
+				"1.0.0": 1
+			}
+		}
+	},
+	"select-parent": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 21
+			}
+		}
+	},
+	"basic-valid-extension": {
+		"downloads": {
+			"versions": {
+				"2.0.0": 9,
+				"1.0.0": 3,
+				"3.0.0": 31
+			}
+		}
+	},
+	"com.adrocknaphobia.inlineimage": {
+		"downloads": {
+			"versions": {
+				"1.0.614": 1,
+				"1.0.6": 1,
+				"1.0.700": 1,
+				"1.0.715": 1,
+				"1.0.611": 1,
+				"1.0.61": 1,
+				"1.0.2": 1,
+				"1.0.0": 1,
+				"1.0.5": 1,
+				"1.0.4": 1,
+				"1.0.716": 1,
+				"1.0.615": 1,
+				"1.0.612": 1,
+				"1.0.3": 1,
+				"1.0.1": 1
+			}
+		}
+	},
+	"gruehle-hover-preview": {
+		"downloads": {
+			"versions": {
+				"0.4.0": 1
+			}
+		}
+	},
+	"long-desc-extension2": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 1
+			}
+		}
+	},
+	"hoverpreview": {
+		"downloads": {
+			"versions": {
+				"0.4.0": 1
+			}
+		}
+	},
+	"pflynn.brackets.commands.guide": {
+		"downloads": {
+			"versions": {
+				"1.0.5": 1,
+				"1.0.3": 1
+			}
+		}
+	},
+	"long-desc-extension3": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 1
+			}
+		}
+	},
+	"one-level-extension": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 1
+			}
+		}
+	},
+	"bogus-top-dir": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 1
+			}
+		}
+	},
+	"everyscrub": {
+		"downloads": {
+			"versions": {
+				"0.23.0": 23
+			}
+		}
+	},
+	"keywords-extension": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 16
+			}
+		}
+	},
+	"stylussupport": {
+		"downloads": {
+			"versions": {
+				"0.1.5": 36
+			}
+		}
+	},
+	"incompatible-newer": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 4
+			}
+		}
+	},
+	"snippets-extension": {
+		"downloads": {
+			"versions": {
+				"0.3.0": 6,
+				"0.3.1": 23
+			}
+		}
+	},
+	"couzteau.edgecode.spellcheck": {
+		"downloads": {
+			"versions": {
+				"0.5": 6
+			}
+		}
+	},
+	"jrowny.brackets.snippets": {
+		"downloads": {
+			"versions": {
+				"1.0.0": 4
+			}
+		}
+	},
+	"testquickly": {
+		"downloads": {
+			"versions": {
+				"1.0.1": 1,
+				"1.0.2": 1
+			}
+		}
+	},
+	"extensions/basic-valid-extension": {
+		"downloads": {
+			"versions": {
+				"2.0.0": 1
+			}
+		}
+	},
+	"recentDownloads": {
+		"startDate": "2014-01-08T08:46:14.663Z",
+		"endDate": "2014-01-15T08:46:15.579Z",
+		"mostDownloadedExtensions": [
+			{
+				"extensionName": "basic-valid-extension",
+				"totalDownloads": 43
+			},
+			{
+				"extensionName": "stylussupport",
+				"totalDownloads": 36
+			},
+			{
+				"extensionName": "snippets-extension",
+				"totalDownloads": 29
+			},
+			{
+				"extensionName": "everyscrub",
+				"totalDownloads": 23
+			},
+			{
+				"extensionName": "select-parent",
+				"totalDownloads": 21
+			},
+			{
+				"extensionName": "keywords-extension",
+				"totalDownloads": 16
+			},
+			{
+				"extensionName": "com.adrocknaphobia.inlineimage",
+				"totalDownloads": 15
+			},
+			{
+				"extensionName": "long-desc-extension",
+				"totalDownloads": 14
+			},
+			{
+				"extensionName": "test-quickly",
+				"totalDownloads": 8
+			},
+			{
+				"extensionName": "malicious-script-extension",
+				"totalDownloads": 8
+			},
+			{
+				"extensionName": "couzteau.edgecode.spellcheck",
+				"totalDownloads": 6
+			},
+			{
+				"extensionName": "jrowny.brackets.snippets",
+				"totalDownloads": 4
+			},
+			{
+				"extensionName": "incompatible-newer",
+				"totalDownloads": 4
+			},
+			{
+				"extensionName": "incompatible-version",
+				"totalDownloads": 3
+			},
+			{
+				"extensionName": "testquickly",
+				"totalDownloads": 2
+			},
+			{
+				"extensionName": "pflynn.brackets.commands.guide",
+				"totalDownloads": 2
+			},
+			{
+				"extensionName": "extensions/basic-valid-extension",
+				"totalDownloads": 1
+			},
+			{
+				"extensionName": "bogus-top-dir",
+				"totalDownloads": 1
+			},
+			{
+				"extensionName": "one-level-extension",
+				"totalDownloads": 1
+			},
+			{
+				"extensionName": "long-desc-extension3",
+				"totalDownloads": 1
+			},
+			{
+				"extensionName": "hoverpreview",
+				"totalDownloads": 1
+			},
+			{
+				"extensionName": "long-desc-extension2",
+				"totalDownloads": 1
+			},
+			{
+				"extensionName": "gruehle-hover-preview",
+				"totalDownloads": 1
+			}
+		]
+	}
+}

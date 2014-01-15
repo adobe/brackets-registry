@@ -29,7 +29,8 @@
 var rewire         = require("rewire"),
     routes         = rewire("../lib/routes"),
     registry_utils = require("../lib/registry_utils"),
-    fs             = require("fs");
+    fs             = require("fs"),
+    path           = require("path");
 
 var repository = routes.__get__("repository");
 
@@ -408,19 +409,45 @@ describe("routes", function () {
 		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[my-extension v1\.0\.0\]\]><\/title>/);
 		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[another-extension v2\.0\.0\]\]><\/title>/);
 	});
-	
-    it("should not accept post request to update the download stats other than localhost/127.0.0.1", function () {
-        req.ip = '10.32.1.2';
-        req.host = 'www.adobe.com';
-        _stats(req, res);
-        expect(res.send).toHaveBeenCalledWith(403);
-    });
 
-    xit("should accept post request to update the download stats from localhost/127.0.0.1", function () {
-        req.ip = '127.0.0.1';
-        req.host = 'localhost';
-        _stats(req, res);
-        expect(res.send).toHaveBeenCalledWith(201);
+    describe("Add download data", function () {
+        var repo = rewire("../lib/repository");
+
+        beforeEach(function () {
+            // configure repository with filestorage
+            var loaded = false;
+            repo.configure({"storage": "../lib/ramstorage.js"});
+            var registry = JSON.parse(fs.readFileSync(path.join(path.dirname(module.filename), "testRegistry", "registry.json")));
+            repo.__set__("registry", registry);
+            setTimeout(function () {
+                routes.__set__("repository", repo);
+                loaded = true;
+            }, 100);
+
+            waitsFor(function () {
+                return loaded;
+            }, "All loaded", 500);
+        });
+
+        it("should not accept post request to update the download stats other than localhost/127.0.0.1", function () {
+            req.ip = '10.32.1.2';
+            req.host = 'www.adobe.com';
+            _stats(req, res);
+            expect(res.send).toHaveBeenCalledWith(403);
+        });
+
+        it("should accept post request to update the download stats from localhost/127.0.0.1", function () {
+            req.ip = '127.0.0.1';
+            req.host = 'localhost';
+            req.files = {file: {path: path.join(path.dirname(module.filename), "stats/downloadStats.json")}};
+
+            _stats(req, res);
+
+            var registry = repo.getRegistry();
+            expect(res.send).toHaveBeenCalledWith(201);
+            expect(registry["snippets-extension"].versions[0].downloads).toBe(6);
+            expect(registry["snippets-extension"].totalDownloads).toBe(6);
+        });
     });
 });
 

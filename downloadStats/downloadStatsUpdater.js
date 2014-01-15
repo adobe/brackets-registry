@@ -54,8 +54,9 @@ var tempFolder = config.tempFolder;
 if (config.tempFolder) {
     try {
         fs.mkdirSync(tempFolder);
-    } catch(Exception) {
-        console.log('Tempfolder already exists');
+    } catch(e) {
+        // tell us what went wrong
+        console.error(e.toString());
     }
 } else {
     tempFolder = new temporary.Dir().path;

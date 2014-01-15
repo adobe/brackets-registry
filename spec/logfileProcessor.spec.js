@@ -40,7 +40,16 @@ describe("LogfileProcessor", function () {
             config["s3.bucket"] = "no_bucket_name";
         });
         
-        it("Should return the information for 1 Extension", function (done) {
+        it("should throw an exception when configure without AWS credentials", function (done) {
+            try {
+                var logfileProcessor = new LogfileProcessor({});
+            } catch(e) {
+                expect(e.toString()).toBe("Error: Configuration error: aws.accesskey, aws.secretkey, or s3.bucket missing");
+                done();
+            }
+        });
+
+        it("should return the information for 1 Extension", function (done) {
             var logfileProcessor = new LogfileProcessor(config);
 
             logfileProcessor.extractDownloadStats(testLogfileDirectory + "/one-extension").then(function (downloadStats) {
@@ -50,7 +59,7 @@ describe("LogfileProcessor", function () {
             });
         });
 
-        it("Should return the information for 1 Extension and multiple versions", function (done) {
+        it("should return the information for 1 Extension and multiple versions", function (done) {
             var logfileProcessor = new LogfileProcessor(config);
             logfileProcessor.extractDownloadStats(testLogfileDirectory + "/one-extension-multiple-versions").then(function (downloadStats) {
                 expect(downloadStats["select-parent"].downloads.versions["1.0.0"]).toBe(1);

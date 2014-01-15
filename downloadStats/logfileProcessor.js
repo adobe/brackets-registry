@@ -195,7 +195,12 @@ LogfileProcessor.prototype = {
                 });
 
                 recentDownloads = _.sortBy(recentDownloads, "totalDownloads").reverse();
-                recentDownloadsPromise.resolve(recentDownloads);
+
+                var recentDownloadsWithMetadata = {};
+                recentDownloadsWithMetadata["startDate"] = new Date(sevenDaysAgo);
+                recentDownloadsWithMetadata["endDate"] = new Date();
+                recentDownloadsWithMetadata["mostDownloadedExtensions"] = recentDownloads;
+                recentDownloadsPromise.resolve(recentDownloadsWithMetadata);
             });
         });
 

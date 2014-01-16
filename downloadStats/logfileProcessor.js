@@ -170,6 +170,10 @@ LogfileProcessor.prototype = {
         return deferred.promise;
     },
 
+    _downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
+        return this.downloadLogfiles(tempFolderName, lastProcessedTimestamp);
+    },
+
     getRecentDownloads: function (tempFolderName) {
         var sevenDaysAgo = new Date() - (7 * 24 * 60 * 60 * 1000),
             recentDownloadsPromise = Promise.defer();
@@ -177,7 +181,7 @@ LogfileProcessor.prototype = {
         var self = this;
 
         // download only the logfiles starting 7 days ago
-        var promise = this.downloadLogfiles(tempFolderName, sevenDaysAgo);
+        var promise = this._downloadLogfiles(tempFolderName, sevenDaysAgo);
         promise.then(function (timestampLastProcessedLogfile) {
             self.extractDownloadStats(tempFolderName).then(function (resultJSON) {
                 // transform to something more suitable

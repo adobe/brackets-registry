@@ -24,7 +24,7 @@
 
 /*jslint vars: true, plusplus: true, devel: true, node: true, nomen: true,
 indent: 4, maxerr: 50 */
-/*global expect, jasmine, describe, it, beforeEach, afterEach, spyOn */
+/*global expect, jasmine, describe, it, xit, beforeEach, afterEach, spyOn */
 
 "use strict";
 
@@ -155,27 +155,119 @@ describe("S3 Storage", function () {
     
     it("should be able to save the registry to S3", function (done) {
         var storage = new s3storage.Storage(config);
-        
+
+        var requestNumber = 1;
+
         AWS.S3 = {
             Client: function (options) {
                 this.putObject = function (params, callback) {
-                    expect(params).toEqual({
-                        Bucket: "repository.brackets.io",
-                        Key: "registry.json",
-                        ACL: "public-read",
-                        ContentEncoding: "gzip",
-                        ContentType: "application/json",
-                        Body: jasmine.any(Buffer)
-                    });
-                    zlib.gunzip(params.Body, function (err, uncompressed) {
-                        var registry = JSON.parse(uncompressed.toString());
-                        expect(registry).toEqual(sampleRegistry);
-                        done();
-                    });
+                    if (requestNumber === 1) {
+                        requestNumber++;
+
+                        expect(params).toEqual({
+                            Bucket: "repository.brackets.io",
+                            Key: "registry.json",
+                            ACL: "public-read",
+                            ContentEncoding: "gzip",
+                            ContentType: "application/json",
+                            Body: jasmine.any(Buffer)
+                        });
+
+                        zlib.gunzip(params.Body, function (err, uncompressed) {
+                            var registry = JSON.parse(uncompressed.toString());
+                            expect(registry).toEqual(sampleRegistry);
+                            done();
+                        });
+                    }
                 };
             }
         };
         
+        storage.saveRegistry(sampleRegistry);
+    });
+
+    it("should be able to save the backup registry to S3", function (done) {
+        var storage = new s3storage.Storage(config);
+
+        var requestNumber = 1;
+
+        AWS.S3 = {
+            Client: function (options) {
+                this.putObject = function (params, callback) {
+                    if (requestNumber === 1) {
+                        requestNumber++;
+                        expect(params).toEqual({
+                            Bucket: "repository.brackets.io",
+                            Key: "registry.json",
+                            ACL: "public-read",
+                            ContentEncoding: "gzip",
+                            ContentType: "application/json",
+                            Body: jasmine.any(Buffer)
+                        });
+
+                        callback(null, {});
+                    } else {
+                        expect(params.Key.startsWith("registry_backups/registry")).not.toBe(-1);
+                        expect(params).toEqual({
+                            Bucket: "repository.brackets.io",
+                            ACL: "public-read",
+                            ContentEncoding: "gzip",
+                            ContentType: "application/json",
+                            Body: jasmine.any(Buffer)
+                        });
+
+                        callback(null, {});
+
+                        zlib.gunzip(params.Body, function (err, uncompressed) {
+                            var registry = JSON.parse(uncompressed.toString());
+                            expect(registry).toEqual(sampleRegistry);
+                            done();
+                        });
+                    }
+                };
+            }
+        };
+
+        storage.saveRegistry(sampleRegistry);
+    });
+
+    xit("should simulate an error saving the backup registry to S3 ", function (done) {
+        var storage = new s3storage.Storage(config);
+        
+        var requestNumber = 1;
+
+        AWS.S3 = {
+            Client: function (options) {
+                this.putObject = function (params, callback) {
+                    if (requestNumber === 1) {
+                        requestNumber++;
+                        expect(params).toEqual({
+                            Bucket: "repository.brackets.io",
+                            Key: "registry.json",
+                            ACL: "public-read",
+                            ContentEncoding: "gzip",
+                            ContentType: "application/json",
+                            Body: jasmine.any(Buffer)
+                        });
+
+                        callback(null, {});
+                    } else {
+                        expect(params.Key.startsWith("registry_backups/registry")).not.toBe(-1);
+                        expect(params).toEqual({
+                            Bucket: "repository.brackets.io",
+                            ACL: "public-read",
+                            ContentEncoding: "gzip",
+                            ContentType: "application/json",
+                            Body: jasmine.any(Buffer)
+                        });
+
+                        callback("Couldn't access S3", {});
+                        done();
+                    }
+                };
+            }
+        };
+
         storage.saveRegistry(sampleRegistry);
     });
     

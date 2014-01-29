@@ -96,7 +96,13 @@ LogfileProcessor.prototype = {
 
             var allPromises = data.Contents.map(function (obj) {
                 if (new Date(obj.LastModified) > lastProcessedTimestamp) {
-                    return _writeLogfileHelper(fq, obj);
+                    var promise = _writeLogfileHelper(fq, obj);
+
+                    promise.then(function () {
+                        globalPromise.progress(".");
+                    });
+
+                    return promise;
                 }
             });
 
@@ -160,7 +166,7 @@ LogfileProcessor.prototype = {
                         }
                     }
 
-                    deferred.progress();
+                    deferred.progress(".");
                 });
             });
 
@@ -200,10 +206,12 @@ LogfileProcessor.prototype = {
 
                 recentDownloads = _.sortBy(recentDownloads, "totalDownloads").reverse();
 
-                var recentDownloadsWithMetadata = {};
-                recentDownloadsWithMetadata["startDate"] = new Date(sevenDaysAgo);
-                recentDownloadsWithMetadata["endDate"] = new Date();
-                recentDownloadsWithMetadata["mostDownloadedExtensions"] = recentDownloads;
+                var recentDownloadsWithMetadata = {
+                    "startDate": new Date(sevenDaysAgo),
+                    "endDate": new Date(),
+                    "mostDownloadedExtensions": recentDownloads
+                };
+
                 recentDownloadsPromise.resolve(recentDownloadsWithMetadata);
             });
         });

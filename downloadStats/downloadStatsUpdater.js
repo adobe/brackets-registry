@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  * Copyright (c) 2014 Adobe Systems Incorporated. All rights reserved.
  *  
@@ -33,32 +32,44 @@ var fs = require("fs"),
     temporary = require("temporary"),
     LogfileProcessor = require("./logfileProcessor").LogfileProcessor,
     program = require('commander'),
-    Promise    = require("bluebird");
+    Promise = require("bluebird"),
+    writeFile = Promise.promisify(require("fs").writeFile);
 
 program
-  .version('0.0.1')
-  .option('-d, --download', 'Download logfiles from S3')
-  .option('-e, --extract', 'Extract Extension download data from downloaded logfiles')
-  .option('-d, --downloadStats', 'Generate rolling download data')
-  .option('-t, --tempFolder <path>', 'Path to temp folder (makes it easier to inspect logfiles)')
-  .option('-p, --progress [true|false]', 'Print progress information')
-  .option('-v, --verbose [true|false]', 'Increase the level of output')
-  .parse(process.argv);
+    .version('0.0.1')
+    .option('-d, --download', 'Download logfiles from S3')
+    .option('-e, --extract', 'Extract Extension download data from downloaded logfiles')
+    .option('-d, --downloadStats', 'Generate rolling download data')
+    .option('-t, --tempFolder <path>', 'Path to temp folder (makes it easier to inspect logfiles)')
+    .option('-p, --progress [true|false]', 'Print progress information')
+    .option('-v, --verbose [true|false]', 'Increase the level of output')
+    .parse(process.argv);
 
-// read the config
+// Workaround: posting to SSL with self signed certificate fails
+// https://github.com/mikeal/request/issues/418
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+// read the config. This file must exists. Otherwise follow these setup instructions
+// https://github.com/adobe/brackets-registry to create it.
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../config/config.json")));
 var lastProcessedTimestamp = {};
+var httpPort = config.port || 4040; // default port for registry webapp
+var protocol = config.insecure ? "http" : "https";
 
 try {
     lastProcessedTimestamp = JSON.parse(fs.readFileSync(path.resolve(__dirname, "lastProcessedLogfile.json")));
 
-    if (! lastProcessedTimestamp.ts) {
+    if (!lastProcessedTimestamp.ts) {
         lastProcessedTimestamp.ts = 0;
     }
 } catch (Exception) {
     lastProcessedTimestamp.ts = 0;
 }
 
+/**
+ * This is a helper log function that can be turned on and off by providing `-v``
+ * when running this script from the command line.
+ */
 function log() {
     if (program.verbose) {
         console.log(Array.prototype.slice.apply(arguments).join(' '));
@@ -74,7 +85,7 @@ var tempFolder = config.tempFolder || program.tempFolder;
 if (tempFolder) {
     try {
         fs.mkdirSync(tempFolder);
-    } catch(e) {
+    } catch (e) {
         if (e.code !== "EEXIST") {
             // tell us what went wrong
             console.error(e.toString());
@@ -82,7 +93,7 @@ if (tempFolder) {
     }
 } else {
     tempFolder = new temporary.Dir().path;
-    log("Using temp directory: %s", tempFolder);
+    log("Using temp directory:", tempFolder);
 }
 
 function downloadLogFiles(progress) {
@@ -93,8 +104,9 @@ function downloadLogFiles(progress) {
     var logfileProcessor = new LogfileProcessor(config);
     var promise = logfileProcessor.downloadLogfiles(tempFolder, lastProcessedTimestamp.ts);
     promise.then(function (timestampLastProcessedLogfile) {
-        fs.writeFileSync(path.resolve(__dirname, "lastProcessedLogfile.json"), JSON.stringify({ts: Date.parse(timestampLastProcessedLogfile)}));
-        deferred.resolve();
+        writeFile(path.resolve(__dirname, "lastProcessedLogfile.json"), JSON.stringify({ts: Date.parse(timestampLastProcessedLogfile)})).then(function () {
+            deferred.resolve();
+        });
     });
 
     if (progress) {
@@ -114,9 +126,9 @@ function extractExtensionDownloadData(progress) {
     var logfileProcessor = new LogfileProcessor(config);
     var promise = logfileProcessor.extractDownloadStats(tempFolder);
     promise.then(function (downloadStats) {
-        fs.writeFileSync(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats));
-
-        deferred.resolve(downloadStats);
+        writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
+            deferred.resolve(downloadStats);
+        });
     });
 
     if (progress) {
@@ -140,9 +152,9 @@ function generateRecentDownloadStats(progress) {
     var promise = logfileProcessor.getRecentDownloads(tempFolder);
 
     promise.then(function (json) {
-        fs.writeFileSync(RECENT_DOWNLOAD_STATS_FILENAME, JSON.stringify(json));
-
-        deferred.resolve(json);
+        writeFile(RECENT_DOWNLOAD_STATS_FILENAME, JSON.stringify(json)).then(function () {
+            deferred.resolve(json);
+        });
     });
 
     if (progress) {
@@ -158,22 +170,23 @@ function doItAll(progress) {
     downloadLogFiles(progress).then(function () {
         extractExtensionDownloadData(progress).then(function (downloadStats) {
             generateRecentDownloadStats(progress).then(function (recentDownloads) {
-                downloadStats["recentDownloads"] = recentDownloads;
-                fs.writeFileSync(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats));
+                downloadStats.recentDownloads = recentDownloads;
 
-                // posting works only from localhost
-                var client = request.newClient("http://localhost:" + config.port);
-                client.sendFile("/stats", path.resolve(__dirname, DOWNLOAD_STATS_FILENAME), null, function (err, res, body) {
-                    if (err) {
-                        console.error(err);
-                    } else {
-                        log("File uploaded");
+                writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
+                    // posting works only from localhost
+                    var client = request.newClient(protocol + "://localhost:" + httpPort);
+                    client.sendFile("/stats", path.resolve(__dirname, DOWNLOAD_STATS_FILENAME), null, function (err, res, body) {
+                        if (err) {
+                            console.error(err);
+                        } else {
+                            log("File uploaded");
+                        }
+                    });
+
+                    if (!config["debug.keepTempFolder"]) {
+                        fs.rmdirSync(tempFolder);
                     }
                 });
-
-                if (!config['debug.keepTempFolder']) {
-                    fs.rmdirSync(tempFolder);
-                }
             });
         });
     });

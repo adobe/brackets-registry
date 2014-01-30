@@ -22,7 +22,7 @@
  */
 
 /*jslint vars: true, plusplus: true, nomen: true, node: true, indent: 4, maxerr: 50 */
-/*global expect, describe, it, beforeEach, afterEach, createSpy */
+/*global expect, describe, it, beforeEach, afterEach, createSpy, waitsFor */
 
 "use strict";
 
@@ -445,7 +445,7 @@ describe("routes", function () {
             _stats(req, res);
 
             var registry = repo.getRegistry();
-            expect(res.send).toHaveBeenCalledWith(201);
+            expect(res.send).toHaveBeenCalledWith(202);
             expect(registry["snippets-extension"].versions[0].downloads).toBe(6);
             expect(registry["snippets-extension"].totalDownloads).toBe(6);
         });
@@ -457,7 +457,7 @@ describe("routes", function () {
             
             expect(Object.keys(modifiedRegistry).length).toBe(1);
             expect(modifiedRegistry["snippets-extension"]).not.toBeNull();
-            expect(modifiedRegistry["recentDownloads"]).toBeUndefined();
+            expect(modifiedRegistry.recentDownloads).toBeUndefined();
         });
     });
 });

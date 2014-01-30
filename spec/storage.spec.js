@@ -207,8 +207,9 @@ describe("S3 Storage", function () {
 
                         callback(null, {});
                     } else {
-                        expect(params.Key.startsWith("registry_backups/registry")).not.toBe(-1);
+                        expect(params.Key.indexOf("registry_backups/registry")).toBe(0);
                         expect(params).toEqual({
+                            Key: params.Key,
                             Bucket: "repository.brackets.io",
                             ACL: "public-read",
                             ContentEncoding: "gzip",

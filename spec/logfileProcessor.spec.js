@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Adobe Systems Incorporated. All rights reserved.
+ * Copyright (c) 2014 Adobe Systems Incorporated. All rights reserved.
  *  
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"), 
@@ -22,7 +22,7 @@
  */
 
 /*jslint vars: true, plusplus: true, nomen: true, node: true, indent: 4, maxerr: 50 */
-/*global expect, describe, it, beforeEach, afterEach, createSpy */
+/*global expect, describe, it, beforeEach, afterEach, createSpy, jasmine */
 
 "use strict";
 
@@ -44,7 +44,7 @@ describe("LogfileProcessor", function () {
         it("should throw an exception when configure without AWS credentials", function (done) {
             try {
                 var lfp = new logfileProcessor.LogfileProcessor({});
-            } catch(e) {
+            } catch (e) {
                 expect(e.toString()).toBe("Error: Configuration error: aws.accesskey, aws.secretkey, or s3.bucket missing");
                 done();
             }
@@ -75,24 +75,23 @@ describe("LogfileProcessor", function () {
     describe("Create recent download stats", function () {
         it("should collect the recent download data", function (done) {
             var S3 = {
-                listObjects: function(bucket, callback) { callback(null, {Contents: []}); }
+                listObjects: function (bucket, callback) { callback(null, {Contents: []}); }
             };
+
             var AWS = {
                 config: {
                     update: jasmine.createSpy()
                 },
                 S3: {
-                    Client: function(arg) { return S3; }
+                    Client: function (arg) { return S3; }
                 }
             };
 
-            logfileProcessor.__set__("AWS", AWS);            
+            logfileProcessor.__set__("AWS", AWS);
             var lfp = new logfileProcessor.LogfileProcessor(config);
             lfp.getRecentDownloads(path.join(testLogfileDirectory, "bunchOfLogfiles")).then(function (downloadStats) {
-                
-                expect(18).toBe(downloadStats.mostDownloadedExtensions.length);
-                expect("select-parent").toBe(downloadStats.mostDownloadedExtensions[0].extensionName);
-                expect(16).toBe(downloadStats.mostDownloadedExtensions[0].totalDownloads);
+                expect(18).toBe(Object.keys(downloadStats.extensions).length);
+                expect(2).toBe(Object.keys(downloadStats.extensions[0]["incompatible-version"].downloads.recent).length);
                 done();
             });
         });

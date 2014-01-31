@@ -39,7 +39,6 @@ program
     .version('0.0.1')
     .option('-d, --download', 'Download logfiles from S3')
     .option('-e, --extract', 'Extract Extension download data from downloaded logfiles')
-    .option('-d, --downloadStats', 'Generate rolling download data')
     .option('-t, --tempFolder <path>', 'Path to temp folder (makes it easier to inspect logfiles)')
     .option('-p, --progress [true|false]', 'Print progress information')
     .option('-v, --verbose [true|false]', 'Increase the level of output')
@@ -140,53 +139,23 @@ function extractExtensionDownloadData(progress) {
     return deferred.promise;
 }
 
-function generateRecentDownloadStats(progress) {
-    var deferred = Promise.defer();
-
-    // create temp folder only for this operation
-    var tempFolder = new temporary.Dir().path;
-
-    log("Generate recent extension download data from logfiles in", tempFolder);
-
-    var logfileProcessor = new LogfileProcessor(config);
-    var promise = logfileProcessor.getRecentDownloads(tempFolder);
-
-    promise.then(function (json) {
-        writeFile(RECENT_DOWNLOAD_STATS_FILENAME, JSON.stringify(json)).then(function () {
-            deferred.resolve(json);
-        });
-    });
-
-    if (progress) {
-        promise.progressed(function (value) {
-            process.stdout.write(value);
-        });
-    }
-
-    return deferred.promise;
-}
-
 function doItAll(progress) {
     downloadLogFiles(progress).then(function () {
         extractExtensionDownloadData(progress).then(function (downloadStats) {
-            generateRecentDownloadStats(progress).then(function (recentDownloads) {
-                downloadStats.recentDownloads = recentDownloads;
-
-                writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
-                    // posting works only from localhost
-                    var client = request.newClient(protocol + "://localhost:" + httpPort);
-                    client.sendFile("/stats", path.resolve(__dirname, DOWNLOAD_STATS_FILENAME), null, function (err, res, body) {
-                        if (err) {
-                            console.error(err);
-                        } else {
-                            log("File uploaded");
-                        }
-                    });
-
-                    if (!config["debug.keepTempFolder"]) {
-                        fs.rmdirSync(tempFolder);
+            writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
+                // posting works only from localhost
+                var client = request.newClient(protocol + "://localhost:" + httpPort);
+                client.sendFile("/stats", path.resolve(__dirname, DOWNLOAD_STATS_FILENAME), null, function (err, res, body) {
+                    if (err) {
+                        console.error(err);
+                    } else {
+                        log("File uploaded");
                     }
                 });
+
+                if (!config["debug.keepTempFolder"]) {
+                    fs.rmdirSync(tempFolder);
+                }
             });
         });
     });
@@ -197,8 +166,6 @@ if (program.download) {
     downloadLogFiles(program.progress);
 } else if (program.extract) {
     extractExtensionDownloadData(program.progress);
-} else if (program.downloadStats) {
-    generateRecentDownloadStats(program.progress);
 } else {
     doItAll(program.progress);
 }

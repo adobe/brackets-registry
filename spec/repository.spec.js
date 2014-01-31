@@ -44,17 +44,17 @@ describe("Repository", function () {
             storage: "./ramstorage"
         });
     });
-    
+
     afterEach(function () {
         repository.__set__("validate", originalValidate);
     });
-    
+
     function setValidationResult(result) {
         repository.__set__("validate", function (path, options, callback) {
             callback(null, result);
         });
     }
-    
+
     var username = "github:reallyreallyfakeuser";
 
     it("should fail with no configuration", function (done) {
@@ -64,38 +64,38 @@ describe("Repository", function () {
             done();
         });
     });
-    
+
     it("should be able to add a valid package", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             expect(err).toEqual(null);
             expect(entry.metadata.name).toEqual("basic-valid-extension");
-            
+
             var registered = repository.__get__("registry")["basic-valid-extension"];
             expect(registered).toBeDefined();
             expect(registered.metadata.name).toEqual("basic-valid-extension");
             expect(registered.owner).toEqual(username);
             expect(registered.versions.length).toEqual(1);
             expect(registered.versions[0].version).toEqual("1.0.0");
-            
+
             // toBeCloseTo with precision -4 means that we're allowing anything less than 10
             // seconds of difference to pass
             var pubDate = new Date(registered.versions[0].published);
             expect(pubDate.getTime()).toBeCloseTo(new Date().getTime(), -4);
-            
+
             var storage = repository.__get__("storage");
             expect(storage.files["basic-valid-extension/basic-valid-extension-1.0.0.zip"]).toEqual(basicValidExtension);
-            
+
             storage.getRegistry(function (err, storedRegistry) {
                 var registered2 = storedRegistry["basic-valid-extension"];
                 expect(registered2.metadata.name).toEqual(registered.metadata.name);
-                
+
                 // testing that Date serialization is working as it should
                 expect(new Date(registered2.versions[0].published).getTime()).toBeCloseTo(new Date().getTime(), -4);
                 done();
             });
         });
     });
-    
+
     it("should verify ownership before allowing action for a package", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             repository.addPackage(basicValidExtension, "github:someonewhowedontknowandshouldnthaveaccess", function (err, metadata) {
@@ -104,7 +104,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should not get tripped up by JS object properties", function (done) {
         setValidationResult({
             metadata: {
@@ -112,13 +112,13 @@ describe("Repository", function () {
                 version: "1.0.0"
             }
         });
-        
+
         repository.addPackage("nopackage.zip", username, function (err, entry) {
             expect(err).toBeNull();
             done();
         });
     });
-    
+
     it("should handle good version upgrades", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             setValidationResult({
@@ -131,19 +131,19 @@ describe("Repository", function () {
                     }
                 }
             });
-            
+
             repository.addPackage("nopackage.zip", username, function (err, entry) {
                 expect(entry.metadata.description).toEqual("Less basic than before");
                 expect(entry.metadata.version).toEqual("2.0.0");
                 expect(entry.versions.length).toEqual(2);
                 expect(entry.versions[1].version).toEqual("2.0.0");
                 expect(entry.versions[1].brackets).toEqual(">0.21.0");
-                
+
                 // toBeCloseTo with precision -4 means that we're allowing anything less than 10
                 // seconds of difference to pass
                 var pubDate = new Date(entry.versions[1].published);
                 expect(pubDate.getTime()).toBeCloseTo(new Date().getTime(), -4);
-                
+
                 var storage = repository.__get__("storage");
                 expect(storage.files["basic-valid-extension/basic-valid-extension-1.0.0.zip"]).toEqual(basicValidExtension);
                 expect(storage.files["basic-valid-extension/basic-valid-extension-2.0.0.zip"]).toEqual("nopackage.zip");
@@ -311,6 +311,17 @@ describe("Repository", function () {
 
             var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":3},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":8}}');
             expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
+        });
+
+        it("should update the recent download numbers", function () {
+            var registry = JSON.parse('{"test-package":{"metadata":{"name":"test-package"}, "versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}], "recent": {"20131502": 15}}}');
+            repository.__set__("registry", registry);
+
+            var recentDownloads = {"20130101": 10, "20130202": 5, "20130204": 7, "20140107": 4, "20140307": 41, "20140529": 14, "20130107": 30};
+
+            repository._updateRecentDownloadsForPackage("test-package", recentDownloads);
+            var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
+            expect(Object.keys(updatedRecentDownload).length).toBe(7);
         });
     });
 });

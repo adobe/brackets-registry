@@ -39,6 +39,8 @@ var AWS        = require("aws-sdk"),
 // this regex is used to parse AWS access logfiles. A usual line in the logfile looks like the one below.
 // 04db613bd000d07badc32d16138efc3efa3e96c6c3ca18365997ba468a6ac850 repository.brackets.io [19/Jul/2013:16:26:40 +0000] 192.150.22.5 - 5444C2FE39980E28 REST.GET.OBJECT select-parent/select-parent-1.0.0.zip "GET /repository.brackets.io/select-parent/select-parent-1.0.0.zip HTTP/1.1" 200 - 56846 56846 566 268 "-" "-" -
 var AWSLogFileParserRegex = /(\S+) (\S+) (\S+ \+\S+\]) (\S+) (\S+) (\S+) (\S+) (\S+) "(\S+) (\S+) (\S+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "(.*)" (\S+)/;
+var TimeStampParserRegex = /(\d+)\/(\w+)\/(\d{4}):(\d{2}):(\d{2}):(\d{2})\s+(\+\d+)/;
+
 
 function LogfileProcessor(config) {
     var accessKeyId = config["aws.accesskey"],
@@ -54,6 +56,32 @@ function LogfileProcessor(config) {
         accessKeyId: accessKeyId,
         secretAccessKey: secretAccessKey
     });
+}
+
+/**
+ * Create a short representation of the download timestamp extracted from the logfile
+ *
+ * The date in the logfile looks like this
+ * 10/Apr/2013:18:28:11 +0000
+ * the result will be `20130410`.
+ *
+ * @param {string} date - timestamp from logfile
+ */
+function formatDownloadDate(date) {
+    var tsMatchResult = date.match(TimeStampParserRegex),
+        downloadDate = "";
+
+    if (tsMatchResult) {
+        var tempDate = new Date(Date.parse(tsMatchResult[2] + ", " + tsMatchResult[1] + " " + tsMatchResult[3]));
+        var month = tempDate.getMonth() + 1;
+        var day = tempDate.getDate();
+        downloadDate = downloadDate +
+            tempDate.getFullYear() +
+            (month < 10 ? "0" + month : month) +
+            (day < 10 ? "0" + day : day);
+    }
+
+    return downloadDate;
 }
 
 LogfileProcessor.prototype = {
@@ -178,17 +206,8 @@ LogfileProcessor.prototype = {
                     var matchResult = line.match(AWSLogFileParserRegex);
                     if (matchResult) {
                         var uri = matchResult[8],
-                            date = matchResult[3];
-                        var timestampRegex = /(\d+)\/(\w+)\/(\d{4}):(\d{2}):(\d{2}):(\d{2})\s+(\+\d+)/;
-
-                        var tsMatchResult = date.match(timestampRegex),
-                            downloadDate;
-
-                        if (tsMatchResult) {
-                            var tempDate = new Date(Date.parse(tsMatchResult[2] + ", " + tsMatchResult[1] + " " + tsMatchResult[3]));
-                            var month = tempDate.getMonth() + 1;
-                            downloadDate = "" + tempDate.getFullYear() + (month < 10 ? "0" + month : month) + tempDate.getDate();
-                        }
+                            date = matchResult[3],
+                            downloadDate = formatDownloadDate(date);
 
                         // we are only interested in the Extension zip files
                         if (uri.lastIndexOf(".zip") > -1) {
@@ -212,10 +231,13 @@ LogfileProcessor.prototype = {
                                     }
                                 }
 
-                                if (result[extensionName].downloads.recent[downloadDate]) {
-                                    result[extensionName].downloads.recent[downloadDate]++;
+                                // count the recent downloads
+                                var recentDownloads = result[extensionName].downloads.recent;
+
+                                if (recentDownloads[downloadDate]) {
+                                    recentDownloads[downloadDate]++;
                                 } else {
-                                    result[extensionName].downloads.recent[downloadDate] = 1;
+                                    recentDownloads[downloadDate] = 1;
                                 }
                             }
                         }
@@ -228,61 +250,6 @@ LogfileProcessor.prototype = {
         });
 
         return deferred.promise;
-    },
-
-    _downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
-        return this.downloadLogfiles(tempFolderName, lastProcessedTimestamp);
-    },
-
-    getRecentDownloads: function (tempFolderName) {
-        var sevenDaysAgo = new Date() - (7 * 24 * 60 * 60 * 1000),
-            recentDownloadsPromise = Promise.defer();
-
-        var self = this;
-
-        /**
-          Create this object to store recent downloads
-
-          {
-            "extensionName" : {
-                "downloads": {
-                    "recent": {
-                        "date1": downloads1,
-                        "date2": downloads2,
-                        "dateN": downloadsN,
-                        "date7": downloads7
-                    }
-                }
-            }
-          }
-        */
-
-        // download only the logfiles starting 7 days ago
-        var promise = this._downloadLogfiles(tempFolderName, sevenDaysAgo);
-        promise.then(function () {
-            self.extractDownloadStats(tempFolderName).then(function (resultJSON) {
-                // transform to something more suitable
-                var extensionNames = _.keys(resultJSON);
-                var recentDownloads = extensionNames.map(function (extensionName) {
-                    var result = {};
-
-                    result[extensionName] = {downloads: {"recent": resultJSON[extensionName].downloads.recent}};
-                    return result;
-                });
-
-//                recentDownloads = _.sortBy(recentDownloads, "totalDownloads").reverse();
-
-                var recentDownloadsWithMetadata = {
-                    "startDate": new Date(sevenDaysAgo),
-                    "endDate": new Date(),
-                    "extensions": recentDownloads
-                };
-
-                recentDownloadsPromise.resolve(recentDownloadsWithMetadata);
-            });
-        });
-
-        return recentDownloadsPromise.promise;
     }
 };
 

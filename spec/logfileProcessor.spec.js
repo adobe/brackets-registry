@@ -22,7 +22,7 @@
  */
 
 /*jslint vars: true, plusplus: true, nomen: true, node: true, indent: 4, maxerr: 50 */
-/*global expect, describe, it, beforeEach, afterEach, createSpy, jasmine */
+/*global expect, describe, it, beforeEach, afterEach, createSpy, jasmine, xit */
 
 "use strict";
 
@@ -55,7 +55,7 @@ describe("LogfileProcessor", function () {
 
             lfp.extractDownloadStats(testLogfileDirectory + "/one-extension").then(function (downloadStats) {
                 expect(downloadStats["select-parent"].downloads.versions["1.0.0"]).toBe(1);
-                
+
                 done();
             });
         });
@@ -66,14 +66,14 @@ describe("LogfileProcessor", function () {
                 expect(downloadStats["select-parent"].downloads.versions["1.0.0"]).toBe(1);
                 expect(downloadStats["select-parent"].downloads.versions["1.0.2"]).toBe(1);
                 expect(downloadStats["select-parent"].downloads.versions["1.0.3"]).toBe(1);
-                
+
                 done();
             });
         });
     });
 
     describe("Create recent download stats", function () {
-        it("should collect the recent download data", function (done) {
+        xit("should collect the recent download data", function (done) {
             var S3 = {
                 listObjects: function (bucket, callback) { callback(null, {Contents: []}); }
             };

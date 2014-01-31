@@ -7,8 +7,7 @@
   "scripts": {
     "preinstall": "npm install deps/*",
     "start": "node app",
-    "test": "jasmine-node spec",
-    "test2": "istanbul test jasmine-node spec",
+    "test": "istanbul test jasmine-node spec",
     "jslint": "./node_modules/.bin/jslint ./downloadStats/*.js ./spec/*.js ./lib/*.js"
   },
   "issues": {

@@ -53,7 +53,7 @@ describe("LogfileProcessor", function () {
         it("should return the information for 1 Extension", function (done) {
             var lfp = new logfileProcessor.LogfileProcessor(config);
 
-            lfp.extractDownloadStats(testLogfileDirectory + "/one-extension").then(function (downloadStats) {
+            lfp.extractDownloadStats(path.join(testLogfileDirectory, "one-extension")).then(function (downloadStats) {
                 expect(downloadStats["select-parent"].downloads.versions["1.0.0"]).toBe(1);
 
                 done();
@@ -62,10 +62,19 @@ describe("LogfileProcessor", function () {
 
         it("should return the information for 1 Extension and multiple versions", function (done) {
             var lfp = new logfileProcessor.LogfileProcessor(config);
-            lfp.extractDownloadStats(testLogfileDirectory + "/one-extension-multiple-versions").then(function (downloadStats) {
+            lfp.extractDownloadStats(path.join(testLogfileDirectory, "one-extension-multiple-versions")).then(function (downloadStats) {
                 expect(downloadStats["select-parent"].downloads.versions["1.0.0"]).toBe(1);
                 expect(downloadStats["select-parent"].downloads.versions["1.0.2"]).toBe(1);
                 expect(downloadStats["select-parent"].downloads.versions["1.0.3"]).toBe(1);
+
+                done();
+            });
+        });
+
+        it("should return no information for extension with rar extension", function (done) {
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            lfp.extractDownloadStats(path.join(testLogfileDirectory, "one-invalid-extension-log")).then(function (downloadStats) {
+                expect(downloadStats).toEqual({});
 
                 done();
             });

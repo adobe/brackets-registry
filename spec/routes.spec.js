@@ -43,7 +43,6 @@ var _index = routes.__get__("_index"),
     _upload = routes.__get__("_upload"),
 	_rss = routes.__get__("_rss"),
     _stats = routes.__get__("_stats"),
-    _removeRecentDownloadObject = routes.__get__("_removeRecentDownloadObject"),
     lastVersionDate = registry_utils.lastVersionDate,
     formatUserId = registry_utils.formatUserId,
     ownerLink = registry_utils.ownerLink;
@@ -448,16 +447,6 @@ describe("routes", function () {
             expect(res.send).toHaveBeenCalledWith(202);
             expect(registry["snippets-extension"].versions[0].downloads).toBe(6);
             expect(registry["snippets-extension"].totalDownloads).toBe(6);
-        });
-        
-        it("should remove the recentDownloads object from the registry", function () {
-            var registry = JSON.parse(fs.readFileSync(path.join(path.dirname(module.filename), "testRegistry", "registryWithRecentDownloadData.json")));
-            
-            var modifiedRegistry = _removeRecentDownloadObject(registry);
-            
-            expect(Object.keys(modifiedRegistry).length).toBe(1);
-            expect(modifiedRegistry["snippets-extension"]).not.toBeNull();
-            expect(modifiedRegistry.recentDownloads).toBeUndefined();
         });
     });
 });

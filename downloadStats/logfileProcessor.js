@@ -31,7 +31,6 @@ var AWS        = require("aws-sdk"),
     path       = require("path"),
     readline   = require("readline"),
     FileQueue  = require("filequeue"),
-    eachline   = require("eachline"),
     Promise    = require("bluebird"),
     _          = require("lodash"),
     readFile   = Promise.promisify(require("fs").readFile);
@@ -86,13 +85,75 @@ function formatDownloadDate(date) {
 
 LogfileProcessor.prototype = {
     /**
+     * Write the timestamp of the last processed logfile to S3.
+     *
+     * @param {JSON} - lastProcessedTimestamp {ts: timestamp}
+     *
+     * @return {Promise} - promise that resolves with the `lastProcessedTimestamp`
+     * once the object was written to S3. Will rejected with err in case of any error.
+     */
+    setLastProcessedTimestamp: function (lastProcessedTimestamp) {
+        var self = this,
+            writeTSPromise = Promise.defer();
+
+        var s3 = new AWS.S3.Client({
+            sslEnabled: true
+        });
+
+        s3.putObject({
+            Bucket: self.bucketName,
+            Key: "logfileProcessing/lastProcessedLogfile.json",
+            ACL: "public-read",
+            ContentType: "application/json",
+            Body: new Buffer(JSON.stringify(lastProcessedTimestamp))
+        }, function (err, data) {
+            if (err) {
+                writeTSPromise.reject(err);
+            } else {
+                writeTSPromise.resolve(lastProcessedTimestamp);
+            }
+        });
+
+        return writeTSPromise.promise;
+    },
+
+    getLastProcessedTimestamp: function () {
+        var s3 = new AWS.S3.Client({
+            sslEnabled: true
+        });
+
+        var self = this,
+            readTSPromise = Promise.defer();
+
+        s3.getObject({
+            Bucket: self.bucketName,
+            Key: "logfileProcessing/lastProcessedLogfile.json"
+        }, function (err, data) {
+            if (err) {
+                if (err.code === "NoSuchKey") {
+                    // return default: read all logs
+                    readTSPromise.resolve(0);
+                } else {
+                    readTSPromise.reject(err);
+                }
+            } else {
+                readTSPromise.resolve(data);
+            }
+        });
+
+        return readTSPromise.promise;
+    },
+
+    /**
      * Download the S3 logfiles into the directory tempFolderName. The lastProcessedTimestamp indicates the last processed logfile.
      * All previous logfiles will be skipped and not downloaded for further processing.
      * @param {String} - tempFolderName temp location to store the logfiles
      * @param {String} - lastProcessedTimestamp timestamp of the logfile last processed. Should be either 0 (include all)
-     * or something much greater
+     * or something greater. If undefined, we will retrieve all logfiles from S3.
+     *
+     * @return {Promise} - resolved when all logfiles have been downloaded from S3.
      */
-    downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
+    _downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
         var self = this;
 
         if (!lastProcessedTimestamp) {
@@ -150,6 +211,31 @@ LogfileProcessor.prototype = {
         return globalPromise.promise;
     },
 
+    downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
+        var self = this,
+            downloadLogfilePromise = Promise.defer();
+
+        self.getLastProcessedTimestamp().then(function (timestamp) {
+            var promise = self._downloadLogfiles(tempFolderName, timestamp);
+            promise.then(function (timestampLastProcessedLogfile) {
+                var lastProcessedTimestamp = {ts: Date.parse(timestampLastProcessedLogfile)};
+                self.setLastProcessedTimestamp(lastProcessedTimestamp).then(function () {
+                    downloadLogfilePromise.resolve(timestampLastProcessedLogfile);
+                }, function (err) {
+                    downloadLogfilePromise.reject(err);
+                });
+            });
+
+            promise.progressed(function (value) {
+                downloadLogfilePromise.progress(value);
+            });
+        }, function () {
+            downloadLogfilePromise.reject("Error downloading last timestamp");
+        });
+
+        return downloadLogfilePromise.promise;
+    },
+
     /**
      * Process all the logfiles in tempFolderName. We are extracting the name and version of the extension (derived from the zip filename).
      *
@@ -157,99 +243,101 @@ LogfileProcessor.prototype = {
      * @return {JSON} - {"extensionname": downloads: {versions: {"version": downloadsPerVersion}}}
      */
     extractDownloadStats: function (tempFolderName) {
-        var deferred = Promise.defer();
+        var globalPromise = Promise.defer(),
+            result = {};
 
-        var fq = new FileQueue(100);
+        function _readLogfileHelper(fq, fileName) {
+            var fileReadPromise = Promise.defer();
 
-        fs.readdir(tempFolderName, function (err, files) {
-            var result = {};
+            fq.readFile(fileName, function (err, fileContent) {
+                if (err) {
+                    fileReadPromise.reject(err);
+                } else {
+                    fileReadPromise.resolve(fileContent);
+                }
+            });
 
-            files.forEach(function (file) {
-//                fq.readFile(path.resolve(tempFolderName, file), function (err, content) {
-//                    var lines = content.toString().split('\n');
-//                    lines.forEach(function (line) {
-//                        var matchResult = line.match(AwsLogFileParserRegex);
-//                        if (matchResult) {
-//                            var uri = matchResult[8];
-//                            // we are only interested in the Extension zip files
-//                            if (uri.lastIndexOf(".zip") > -1) {
-//                                var m = uri.match(/(\S+)\/(\S+)\-(.*)\.zip/);
-//                                if (m) {
-//                                    var extensionName = m[1],
-//                                        version = m[3];
-//
-//                                    if (!result[extensionName]) {
-//                                        result[extensionName] = {downloads : { versions: {} }};
-//
-//                                        result[extensionName].downloads.versions[version] = 1;
-//                                    } else {
-//                                        var downloadsForVersion = result[extensionName].downloads.versions[version];
-//
-//                                        if (downloadsForVersion && !isNaN(downloadsForVersion)) {
-//                                            downloadsForVersion++;
-//                                            result[extensionName].downloads.versions[version] = downloadsForVersion;
-//                                        } else {
-//                                            result[extensionName].downloads.versions[version] = 1;
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-//
-//                        deferred.progress(".");
-//                    });
-//                });
-                var content = fs.readFileSync(path.resolve(tempFolderName, file));
+            return fileReadPromise.promise;
+        }
 
-                var lines = content.toString().split('\n');
-                lines.forEach(function (line) {
-                    var matchResult = line.match(AWSLogFileParserRegex);
-                    if (matchResult) {
-                        var uri = matchResult[8],
-                            date = matchResult[3],
-                            downloadDate = formatDownloadDate(date);
+        function parseLogfile(content) {
+            var readContentPromise = Promise.defer();
 
-                        // we are only interested in the Extension zip files
-                        if (uri.lastIndexOf(".zip") > -1) {
-                            var m = uri.match(/(\S+)\/(\S+)\-(.*)\.zip/);
-                            if (m) {
-                                var extensionName = m[1],
-                                    version = m[3];
+            var lines = content.toString().split('\n');
+            lines.forEach(function (line, index) {
+                var matchResult = line.match(AWSLogFileParserRegex);
+                if (matchResult) {
+                    var uri = matchResult[8],
+                        date = matchResult[3],
+                        downloadDate = formatDownloadDate(date);
 
-                                if (!result[extensionName]) {
-                                    result[extensionName] = {downloads : { versions: {}, recent: {}}};
+//                  // we are only interested in the Extension zip files
+                    var m = uri.match(/(\S+)\/(\S+)\-(.*)\.zip/);
+                    if (m) {
+                        var extensionName = m[1],
+                            version = m[3];
 
-                                    result[extensionName].downloads.versions[version] = 1;
-                                } else {
-                                    var downloadsForVersion = result[extensionName].downloads.versions[version];
+                        if (!result[extensionName]) {
+                            result[extensionName] = {downloads : { versions: {}, recent: {}}};
 
-                                    if (downloadsForVersion && !isNaN(downloadsForVersion)) {
-                                        downloadsForVersion++;
-                                        result[extensionName].downloads.versions[version] = downloadsForVersion;
-                                    } else {
-                                        result[extensionName].downloads.versions[version] = 1;
-                                    }
-                                }
+                            result[extensionName].downloads.versions[version] = 1;
+                        } else {
+                            var downloadsForVersion = result[extensionName].downloads.versions[version];
 
-                                // count the recent downloads
-                                var recentDownloads = result[extensionName].downloads.recent;
-
-                                if (recentDownloads[downloadDate]) {
-                                    recentDownloads[downloadDate]++;
-                                } else {
-                                    recentDownloads[downloadDate] = 1;
-                                }
+                            if (downloadsForVersion && !isNaN(downloadsForVersion)) {
+                                downloadsForVersion++;
+                                result[extensionName].downloads.versions[version] = downloadsForVersion;
+                            } else {
+                                result[extensionName].downloads.versions[version] = 1;
                             }
                         }
-                    }
 
-                    deferred.progress(".");
-                });
+                        // count the recent downloads
+                        var recentDownloads = result[extensionName].downloads.recent;
+
+                        if (recentDownloads[downloadDate]) {
+                            recentDownloads[downloadDate]++;
+                        } else {
+                            recentDownloads[downloadDate] = 1;
+                        }
+                    }
+                }
+
+                if (index === (lines.length - 1)) {
+                    readContentPromise.resolve(result);
+                } else {
+                    readContentPromise.progress(".");
+                }
             });
-            deferred.resolve(result);
+
+            return readContentPromise.promise;
+        }
+
+        fs.readdir(tempFolderName, function (err, allFiles) {
+            var fq = new FileQueue(150);
+
+            var allPromises = allFiles.map(function (file) {
+                var deferred = Promise.defer();
+
+                var _readLogfileHelperPromise = _readLogfileHelper(fq, path.resolve(tempFolderName, file));
+
+                _readLogfileHelperPromise.then(function (content) {
+                    parseLogfile(content).then(function () {
+                        deferred.resolve();
+                    });
+                }).done(function () {
+                    globalPromise.progress(".");
+                });
+
+                return deferred.promise;
+            });
+
+            Promise.settle(allPromises).then(function () {
+                globalPromise.resolve(result);
+            });
         });
 
-        return deferred.promise;
+        return globalPromise.promise;
     }
 };
 

@@ -31,11 +31,11 @@ var fs = require("fs"),
     request = require("request-json"),
     temporary = require("temporary"),
     LogfileProcessor = require("./logfileProcessor").LogfileProcessor,
-    program = require('commander'),
+    programArgs = require('commander'),
     Promise = require("bluebird"),
     writeFile = Promise.promisify(require("fs").writeFile);
 
-program
+programArgs
     .version('0.0.1')
     .option('-d, --download', 'Download logfiles from S3')
     .option('-e, --extract', 'Extract Extension download data from downloaded logfiles')
@@ -51,40 +51,32 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 // read the config. This file must exists. Otherwise follow these setup instructions
 // https://github.com/adobe/brackets-registry to create it.
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../config/config.json")));
-var lastProcessedTimestamp = {};
 var httpPort = config.port || 4040; // default port for registry webapp
 var protocol = config.insecure ? "http" : "https";
 
-try {
-    lastProcessedTimestamp = JSON.parse(fs.readFileSync(path.resolve(__dirname, "lastProcessedLogfile.json")));
-
-    if (!lastProcessedTimestamp.ts) {
-        lastProcessedTimestamp.ts = 0;
-    }
-} catch (Exception) {
-    lastProcessedTimestamp.ts = 0;
-}
+// Constants
+var DOWNLOAD_STATS_FILENAME = "downloadStats.json",
+    RECENT_DOWNLOAD_STATS_FILENAME = "recentDownloadStats.json";
 
 /**
  * This is a helper log function that can be turned on and off by providing `-v``
  * when running this script from the command line.
  */
 function log() {
-    if (program.verbose) {
+    if (programArgs.verbose) {
         console.log(Array.prototype.slice.apply(arguments).join(' '));
     }
 }
 
-// Constants
-var DOWNLOAD_STATS_FILENAME = "downloadStats.json",
-    RECENT_DOWNLOAD_STATS_FILENAME = "recentDownloadStats.json";
-
 // create temp folder for logfiles
-var tempFolder = config.tempFolder || program.tempFolder;
+var tempFolder = programArgs.tempFolder || config.tempFolder;
 if (tempFolder) {
     try {
         fs.mkdirSync(tempFolder);
     } catch (e) {
+        // we don't care if the temp directory already exist,
+        // since this should only happen during testing.
+        // Usually we will use a generated temp dir that is unique
         if (e.code !== "EEXIST") {
             // tell us what went wrong
             console.error(e.toString());
@@ -101,11 +93,9 @@ function downloadLogFiles(progress) {
     log("Downloading logfiles from S3");
 
     var logfileProcessor = new LogfileProcessor(config);
-    var promise = logfileProcessor.downloadLogfiles(tempFolder, lastProcessedTimestamp.ts);
+    var promise = logfileProcessor.downloadLogfiles(tempFolder);
     promise.then(function (timestampLastProcessedLogfile) {
-        writeFile(path.resolve(__dirname, "lastProcessedLogfile.json"), JSON.stringify({ts: Date.parse(timestampLastProcessedLogfile)})).then(function () {
-            deferred.resolve();
-        });
+        deferred.resolve();
     });
 
     if (progress) {
@@ -144,7 +134,9 @@ function doItAll(progress) {
         extractExtensionDownloadData(progress).then(function (downloadStats) {
             writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
                 // posting works only from localhost
-                var client = request.newClient(protocol + "://localhost:" + httpPort);
+                var url = protocol + "://localhost:" + httpPort;
+
+                var client = request.newClient(url);
                 client.sendFile("/stats", path.resolve(__dirname, DOWNLOAD_STATS_FILENAME), null, function (err, res, body) {
                     if (err) {
                         console.error(err);
@@ -162,10 +154,10 @@ function doItAll(progress) {
 }
 
 // Let's get to work
-if (program.download) {
-    downloadLogFiles(program.progress);
-} else if (program.extract) {
-    extractExtensionDownloadData(program.progress);
+if (programArgs.download) {
+    downloadLogFiles(programArgs.progress);
+} else if (programArgs.extract) {
+    extractExtensionDownloadData(programArgs.progress);
 } else {
-    doItAll(program.progress);
+    doItAll(programArgs.progress);
 }

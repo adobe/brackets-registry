@@ -1,0 +1,25 @@
+{
+	"snippets-extension": {
+		"metadata": {
+			"name": "snippets-extension",
+			"title": "Brackets Snippets",
+			"homepage": "https://github.com/jrowny/brackets-snippets",
+			"author": {
+				"name": "Jonathan Rowny"
+			},
+			"version": "1.0.0",
+			"engines": {
+				"brackets": ">=0.24"
+			},
+			"description": "A simple brackets snippets extension."
+		},
+		"owner": "irichter",
+		"versions": [
+			{
+				"version": "0.3.0",
+				"published": "2014-01-10T17:27:25.996Z",
+				"brackets": ">=0.24"
+			}
+		]
+	}
+}

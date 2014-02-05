@@ -1,0 +1,1 @@
+04db613bd000d07badc32d16138efc3efa3e96c6c3ca18365997ba468a6ac850 repository.brackets.io [10/Apr/2013:18:25:53 +0000] 10.253.215.31 arn:aws:iam::581309990414:user/kdangoor 634C43E6CF186AC7 REST.GET.LOGGING_STATUS - "GET /repository.brackets.io?logging HTTP/1.1" 200 - 248 - 25 - "-" "S3Console/0.4" -

@@ -5,6 +5,7 @@
             <div class="fallback">
                 <input type="file" name="extensionPackage" size="40">
                 <button class="btn" type="submit">Upload</button>
+                <input type="hidden" name="_csrf" value="{{csrfToken}}">
             </div>
         </form>
     {{else}}

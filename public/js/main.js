@@ -40,6 +40,9 @@ $(function () {
                         $(".extension-list").html(content);
                     });
             });
+            this.on("sending", function (file, xhr, formData) {
+                formData.append("_csrf", $("meta[name='csrf-token']").attr("content"));
+            });
         },
         accept: function (file, done) {
             if (!file.name.match(/\.zip$/i)) {

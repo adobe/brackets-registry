@@ -122,6 +122,13 @@ app.configure(function () {
     app.use(express.session({ secret: config.sessionSecret }));
     app.use(passport.initialize());
     app.use(passport.session());
+    app.use(express.csrf());
+    app.use(function (req, res, next) {
+        // Must come before router (so locals are exposed properly) but after the CSRF middleware
+        // (so _csrf is set).
+        res.locals.csrfToken = req.csrfToken();
+        next();
+    });
     app.use(app.router);
     // JSLint doesn't like "express.static" because static is a keyword.
     app.use(express["static"](path.resolve(__dirname, "public")));

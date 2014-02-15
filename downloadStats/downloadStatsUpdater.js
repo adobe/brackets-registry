@@ -51,7 +51,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 // read the config. This file must exists. Otherwise follow these setup instructions
 // https://github.com/adobe/brackets-registry to create it.
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../config/config.json")));
-var httpPort = config.port || 4040; // default port for registry webapp
+var httpPort = config.securePort || 4040; // default port for registry webapp
 var protocol = config.insecure ? "http" : "https";
 
 // Constants

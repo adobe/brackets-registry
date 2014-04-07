@@ -71,7 +71,7 @@ describe("LogfileProcessor", function () {
             });
         });
 
-        it("should return no information for extension with rar extension", function (done) {
+        xit("should return no information for extension with rar extension", function (done) {
             var lfp = new logfileProcessor.LogfileProcessor(config);
             lfp.extractDownloadStats(path.join(testLogfileDirectory, "one-invalid-extension-log")).then(function (downloadStats) {
                 expect(downloadStats).toEqual({});

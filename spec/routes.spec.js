@@ -41,6 +41,7 @@ var _index = routes.__get__("_index"),
     _authFailed = routes.__get__("_authFailed"),
     _logout = routes.__get__("_logout"),
     _upload = routes.__get__("_upload"),
+    _delete = routes.__get__("_delete"),
 	_rss = routes.__get__("_rss"),
     _stats = routes.__get__("_stats"),
     lastVersionDate = registry_utils.lastVersionDate,
@@ -51,12 +52,14 @@ var _index = routes.__get__("_index"),
 routes.__set__("_mapError", function (key) { return key; });
 routes.__set__("_formatError", function (err) { return err; });
 
-var customFooter = "<h1>Brought to you by the number 9 and the letter Q</h1>";
-var testRepositoryBaseURL = "http://brackets.io/repositoryForTesting";
+var customFooter = "<h1>Brought to you by the number 9 and the letter Q</h1>",
+    testRepositoryBaseURL = "http://brackets.io/repositoryForTesting",
+    ADMIN = "github:admin";
 
 routes.__set__("config", {
     repositoryBaseURL: testRepositoryBaseURL,
-    customFooter: customFooter
+    customFooter: customFooter,
+    admins: [ADMIN]
 });
 
 describe("routes", function () {
@@ -77,7 +80,7 @@ describe("routes", function () {
                 name: "my-extension",
                 version: "1.0.0"
             },
-            owner: "github:somereallyfakeuser",
+            owner: "github:someuser",
             versions: [
                 { version: "1.0.0", published: "2013-04-02T21:12:33.865Z" }
             ]
@@ -173,7 +176,7 @@ describe("routes", function () {
                 size: 1000
             }
         };
-
+        
         res = {
             redirect: createSpy("res.redirect"),
             render: createSpy("res.render"),
@@ -183,6 +186,7 @@ describe("routes", function () {
         };
         mockRepository = {
             addPackage: createSpy("repository.addPackage"),
+            deletePackageMetadata: createSpy("repository.deletePackageMetadata"),
             getRegistry: function () {
                 return mockRegistry;
             }
@@ -215,8 +219,22 @@ describe("routes", function () {
         _index(req, res);
         expect(res.render).toHaveBeenCalled();
         var args = res.render.mostRecentCall.args;
+        mockRegistry["my-extension"].canAdmin = true;
         expect(args[0]).toBe("index");
         expect(args[1].user).toBe("someuser");
+        expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
+        expect(args[1].customFooter).toBe(customFooter);
+    });
+    
+    it("should render and inject correct data into the home page when admin user is authenticated", function () {
+        req.user = "github:admin";
+        _index(req, res);
+        expect(res.render).toHaveBeenCalled();
+        var args = res.render.mostRecentCall.args;
+        Object.keys(mockRegistry).forEach(function (key) {
+            mockRegistry[key].canAdmin = true;
+        });
+        expect(args[0]).toBe("index");
         expect(args[1].registry).toBeSortedEntriesFrom(mockRegistry);
         expect(args[1].customFooter).toBe(customFooter);
     });
@@ -410,6 +428,67 @@ describe("routes", function () {
 		expect(res.send.mostRecentCall.args[0]).toMatch(/<title><!\[CDATA\[another-extension v2\.0\.0\]\]><\/title>/);
 	});
 
+    it("should return 401 and render failure page if attempting to delete when user is not logged in", function () {
+        _delete(req, res);
+        expect(res.render).toHaveBeenCalledWith("authFailed", { customFooter: customFooter });
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.set).toHaveBeenCalledWith("WWW-Authenticate", "OAuth realm='https://registry.brackets.io'");
+    });
+    
+    it("should return 404 and render failure page if attempting to delete without giving package name", function () {
+        req.user = "github:someuser";
+        _delete(req, res);
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("deleteFailed");
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("UNKNOWN_EXTENSION");
+    });
+    
+    it("should return 404 and render failure page if attempting to delete unknown package", function () {
+        req.user = "github:someuser";
+        req.params = {
+            name: "nonexistent-package"
+        };
+        _delete(req, res);
+        expect(mockRepository.deletePackageMetadata).toHaveBeenCalled();
+        var callback = mockRepository.deletePackageMetadata.mostRecentCall.args[2];
+        callback(new Error(repository.Errors.UNKNOWN_EXTENSION));
+        expect(res.status).toHaveBeenCalledWith(404);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("deleteFailed");
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("UNKNOWN_EXTENSION");
+    });
+
+    it("should return 401 and render failure page if attempting to delete a package without being authorized", function () {
+        req.user = "github:someuser";
+        req.params = {
+            name: "not-my-package"
+        };
+        _delete(req, res);
+        expect(mockRepository.deletePackageMetadata).toHaveBeenCalled();
+        var callback = mockRepository.deletePackageMetadata.mostRecentCall.args[2];
+        callback(new Error(repository.Errors.NOT_AUTHORIZED));
+        expect(res.status).toHaveBeenCalledWith(401);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("deleteFailed");
+        expect(res.render.mostRecentCall.args[1].errors[0]).toBe("NOT_AUTHORIZED");
+    });
+    
+    it("should return 200 and render success page after deleting package", function () {
+        req.user = "github:someuser";
+        req.params = {
+            name: "good-package"
+        };
+        _delete(req, res);
+        expect(mockRepository.deletePackageMetadata).toHaveBeenCalled();
+        var callback = mockRepository.deletePackageMetadata.mostRecentCall.args[2];
+        callback(null);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(res.render).toHaveBeenCalled();
+        expect(res.render.mostRecentCall.args[0]).toBe("deleteSucceeded");
+        expect(res.render.mostRecentCall.args[1].name).toBe("good-package");
+    });
+    
     describe("Add download data", function () {
         var repo = rewire("../lib/repository");
 

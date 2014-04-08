@@ -1,4 +1,4 @@
-/*global Dropzone, $ */
+/*global Dropzone, $, bootbox */
 
 $(function () {
     "use strict";
@@ -52,4 +52,34 @@ $(function () {
             }
         }
     };
+    
+    $("body").on("click", "button.delete", function (event) {
+        var $target = $(event.target),
+            name = $target.data("name");
+        bootbox.confirm("Really delete " + name + "?", function (result) {
+            $.ajax("/package/" + name, {
+                type: "DELETE",
+                data: {
+                    "_csrf": $("meta[name='csrf-token']").attr("content")
+                }
+            }).then(function (result) {
+                var $alert = $("<div>"),
+                    $button = $("<button>");
+                $alert.addClass("alert").addClass("alert-success").addClass("alert-dismissable");
+                $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
+                $alert.append($button);
+                $alert.append(name + " successfully deleted");
+                $("#alertspace").append($alert);
+                $target.parents("tr").remove();
+            }, function (errorResult) {
+                var $alert = $("<div>"),
+                    $button = $("<button>");
+                $alert.addClass("alert").addClass("alert-danger").addClass("alert-dismissable");
+                $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
+                $alert.append($button);
+                $("<div>").appendTo($alert).html(errorResult.responseText);
+                $("#alertspace").append($alert);
+            });
+        });
+    });
 });

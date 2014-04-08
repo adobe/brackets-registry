@@ -48,6 +48,7 @@ config.redirectPort = config.redirectPort || 4000;
 config.storage = config.storage || "./ramstorage.js";
 config.repositoryBaseURL = config.repositoryBaseURL || "";
 config.helpURL = config.helpURL || "";
+config.admins = config.admins || [];
 
 // Load the custom footer HTML from disk, if it's defined.
 if (config.customFooter) {

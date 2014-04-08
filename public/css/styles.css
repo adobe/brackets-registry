@@ -14,3 +14,8 @@ body {
 .extension-list .ext-author {
     font-size: 0.8em;
 }
+
+.admin {
+    clear: both;
+    display: block;
+}

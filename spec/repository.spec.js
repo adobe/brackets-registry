@@ -335,6 +335,87 @@ describe("Repository", function () {
             });
         });
     });
+    
+    it("should change a package's owner when requested by the owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            expect(registry["basic-valid-extension"]).toBeDefined();
+            repository.changePackageOwner("basic-valid-extension", username, "github:newuser", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].owner).toEqual("github:newuser");
+                done();
+            });
+        });
+    });
+    
+    it("should produce an error for unknown package when changing ownership", function (done) {
+        repository.changePackageOwner("does-not-exist", username, function (err) {
+            expect(err).not.toBeNull();
+            done();
+        });
+    });
+    
+    it("should not change ownership for a package when requested by a non-owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            repository.changePackageOwner("basic-valid-extension", "github:unknown", "github:badguy", function (err) {
+                var registry = repository.__get__("registry");
+                expect(err).not.toBeNull();
+                expect(registry["basic-valid-extension"].owner).toEqual("github:reallyreallyfakeuser");
+                done();
+            });
+        });
+    });
+    
+    it("should change ownership of a package when requested by an admin", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            repository.changePackageOwner("basic-valid-extension", ADMIN, "github:someuser", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].owner).toEqual("github:someuser");
+                done();
+            });
+        });
+    });
+    
+    it("should change a package's requirements when requested by the owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            repository.changePackageRequirements("basic-valid-extension", username, "<0.38.0", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].metadata.engines.brackets).toEqual("<0.38.0");
+                done();
+            });
+        });
+    });
+    
+    it("should produce an error for unknown package when changing requrements", function (done) {
+        repository.changePackageRequirements("does-not-exist", username, "<0.38.0", function (err) {
+            expect(err).not.toBeNull();
+            done();
+        });
+    });
+    
+    it("should not change requirements for a package when requested by a non-owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            repository.changePackageRequirements("basic-valid-extension", "github:unknown", "<0.38.0", function (err) {
+                var registry = repository.__get__("registry");
+                expect(err).not.toBeNull();
+                expect(registry["basic-valid-extension"].metadata.engines).toBeUndefined();
+                done();
+            });
+        });
+    });
+    
+    it("should change requirements of a package when requested by an admin", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            repository.changePackageRequirements("basic-valid-extension", ADMIN, "<0.38.0", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].metadata.engines.brackets).toEqual("<0.38.0");
+                done();
+            });
+        });
+    });
 });
 
 describe("Add download data", function () {

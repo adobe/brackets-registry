@@ -15,6 +15,12 @@
                 <span class="muted ext-date">on {{lastVersionDate}}</span>
                 {{#if canAdmin}}
                     <div class="admin btn-group btn-group-xs">
+                        <button type="button" class="btn btn-default changeOwner" data-name="{{metadata.name}}">
+                            Change Owner
+                        </button>
+                        <button type="button" class="btn btn-default changeRequirements" data-name="{{metadata.name}}" data-existing="{{metadata.engines.brackets}}">
+                            Change Requirements
+                        </button>
                         <button type="button" class="btn btn-default delete" data-name="{{metadata.name}}">
                             Delete
                         </button>

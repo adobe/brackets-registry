@@ -2,7 +2,7 @@
 
 $(function () {
     "use strict";
-    
+
     Dropzone.options.uploadForm = {
         paramName: "extensionPackage",
         createImageThumbnails: false,
@@ -52,11 +52,24 @@ $(function () {
             }
         }
     };
-    
+
+    function displayErrorResult(errorResult) {
+        var $alert = $("<div>"),
+            $button = $("<button>");
+        $alert.addClass("alert").addClass("alert-danger").addClass("alert-dismissable");
+        $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
+        $alert.append($button);
+        $("<div>").appendTo($alert).html(errorResult.responseText);
+        $("#alertspace").append($alert);
+    }
+
     $("body").on("click", "button.delete", function (event) {
         var $target = $(event.target),
             name = $target.data("name");
         bootbox.confirm("Really delete " + name + "?", function (result) {
+            if (!result) {
+                return;
+            }
             $.ajax("/package/" + name, {
                 type: "DELETE",
                 data: {
@@ -71,15 +84,71 @@ $(function () {
                 $alert.append(name + " successfully deleted");
                 $("#alertspace").append($alert);
                 $target.parents("tr").remove();
-            }, function (errorResult) {
+            }, displayErrorResult);
+        });
+    });
+
+    $("body").on("click", "button.changeOwner", function (event) {
+        var $target = $(event.target),
+            name = $target.data("name");
+        bootbox.prompt("Enter the GitHub username of the new owner for " + name, function (newOwner) {
+            if (!newOwner) {
+                return;
+            }
+            $.ajax("/package/" + name + "/changeOwner", {
+                type: "POST",
+                data: {
+                    "_csrf": $("meta[name='csrf-token']").attr("content"),
+                    newOwner: newOwner
+                }
+            }).then(function (result) {
                 var $alert = $("<div>"),
                     $button = $("<button>");
-                $alert.addClass("alert").addClass("alert-danger").addClass("alert-dismissable");
+                $alert.addClass("alert").addClass("alert-success").addClass("alert-dismissable");
                 $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
                 $alert.append($button);
-                $("<div>").appendTo($alert).html(errorResult.responseText);
+                $alert.append(name + " owner changed to " + newOwner);
                 $("#alertspace").append($alert);
-            });
+                $.ajax("/registryList", { datatype: "html" })
+                    .done(function (content) {
+                        $(".extension-list").html(content);
+                    });
+            }, displayErrorResult);
+        });
+    });
+
+    $("body").on("click", "button.changeRequirements", function (event) {
+        var $target = $(event.target),
+            name = $target.data("name"),
+            existing = $target.data("existing");
+
+        bootbox.prompt({
+            title: "Enter the Brackets version requirements as a semver range " + name,
+            value: existing,
+            callback: function (requirements) {
+                if (requirements === null) {
+                    return;
+                }
+                $.ajax("/package/" + name + "/changeRequirements", {
+                    type: "POST",
+                    data: {
+                        "_csrf": $("meta[name='csrf-token']").attr("content"),
+                        requirements: requirements
+                    }
+                }).then(function (result) {
+                    var $alert = $("<div>"),
+                        $button = $("<button>");
+                    $alert.addClass("alert").addClass("alert-success").addClass("alert-dismissable");
+                    $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
+                    $alert.append($button);
+                    $alert.append(name + " requirements changed to " + requirements);
+                    $("#alertspace").append($alert);
+                    $.ajax("/registryList", { datatype: "html" })
+                        .done(function (content) {
+                            $(".extension-list").html(content);
+                        });
+                }, displayErrorResult);
+            }
         });
     });
 });

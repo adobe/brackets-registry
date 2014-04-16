@@ -181,31 +181,61 @@ LogfileProcessor.prototype = {
             return fileWrittenPromise.promise;
         }
 
-        s3.listObjects({Bucket: self.bucketName}, function (err, data) {
-            var fq = new FileQueue(100);
+        function listObjects(bucketName, nextMarker, maxKeys) {
+            var listObjectPromise = Promise.defer(),
+                allPromises = [];
 
-            var allPromises = data.Contents.map(function (obj) {
-                if (new Date(obj.LastModified) > lastProcessedTimestamp) {
-                    var promise = _writeLogfileHelper(fq, obj);
+            function _listObjects(bucketName, nextMarker, maxKeys) {
+                var params = {Bucket: bucketName};
+                if (nextMarker) {
+                    params.Marker = nextMarker;
+                }
 
-                    promise.then(function () {
-                        globalPromise.progress(".");
+                if (maxKeys) {
+                    params.MaxKeys = maxKeys;
+                }
+
+                s3.listObjects(params, function (err, data) {
+                    var fq = new FileQueue(150);
+
+                    var promises = data.Contents.map(function (obj) {
+                        if (new Date(obj.LastModified) > lastProcessedTimestamp) {
+                            var promise = _writeLogfileHelper(fq, obj);
+
+                            promise.then(function () {
+                                globalPromise.progress(".");
+                            });
+
+                            return promise;
+                        }
                     });
 
-                    return promise;
-                }
-            });
+                    // flatten the array
+                    promises.forEach(function (item) { allPromises.push(item); });
+                    if (data.IsTruncated) {
+                        var nextMarker = data.Contents[data.Contents.length - 1].Key;
+                        _listObjects(bucketName, nextMarker, maxKeys);
+                    } else {
+                        var ts;
+                        if (data.Contents.length) {
+                            var lastLogfileObject = data.Contents[data.Contents.length - 1];
+                            ts = lastLogfileObject.LastModified;
+                        }
 
-            // get the last logfiles timestamp
-            var ts;
-            if (data.Contents.length) {
-                var lastLogfileObject = data.Contents[data.Contents.length - 1];
-                ts = lastLogfileObject.LastModified;
+                        Promise.settle(allPromises).then(function () {
+                            listObjectPromise.resolve(ts);
+                        });
+                    }
+                });
+
+                return listObjectPromise.promise;
             }
 
-            Promise.settle(allPromises).then(function () {
-                globalPromise.resolve(ts);
-            });
+            return _listObjects(bucketName, nextMarker, maxKeys);
+        }
+
+        listObjects(self.bucketName).then(function (ts) {
+            globalPromise.resolve(ts);
         });
 
         return globalPromise.promise;

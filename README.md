@@ -21,6 +21,7 @@ A node.js-powered registry for Brackets extensions.
    * `rss.description` - Description used for RSS feed, defaults to ''
    * `rss.feedURL` - URL used for RSS feed, defaults to '' (this is the URL used in the feed itself, not the URL used for the feed)
    * `rss.siteURL` - URL used for main site URL in the RSS feed, defaults to '' (see note above, both URLs here are used in the metadata of the feed)
+   * `admins` - a list of "github:username" strings for people that are authorized to administer the packages in the registry
 
 5. `npm start`
 

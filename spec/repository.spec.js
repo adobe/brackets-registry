@@ -35,13 +35,15 @@ var rewire     = require("rewire"),
 var testPackageDirectory = path.join(path.dirname(module.filename), "data"),
     basicValidExtension  = path.join(testPackageDirectory, "basic-valid-extension.zip");
 
-var originalValidate = repository.__get__("validate");
+var originalValidate = repository.__get__("validate"),
+    ADMIN = "github:admin";
 
 describe("Repository", function () {
     beforeEach(function () {
         // Clear the repository
         repository.configure({
-            storage: "./ramstorage"
+            storage: "./ramstorage",
+            admins: [ADMIN]
         });
     });
 
@@ -289,39 +291,163 @@ describe("Repository", function () {
                 });
             });
         });
+        
     });
 
-    describe("Add download data", function () {
-        beforeEach(function () {
-            var registry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}]}}');
-
-            repository.__set__("registry", registry);
+    it("should delete a package when requested by the owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            expect(registry["basic-valid-extension"]).toBeDefined();
+            repository.deletePackageMetadata("basic-valid-extension", username, function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"]).toBeUndefined();
+                done();
+            });
         });
-
-        it("should add the download numbers to the 0.3.0 extension version and update the download total", function () {
-            repository.addDownloadDataToPackage("snippets-extension", "0.3.0", 5);
-
-            var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":5}}');
-            expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
+    });
+    
+    it("should produce an error for unknown package", function (done) {
+        repository.deletePackageMetadata("does-not-exist", username, function (err) {
+            expect(err).not.toBeNull();
+            done();
         });
-
-        it("should add the download numbers to the 0.2.0 extension version and update the download total", function () {
-            repository.addDownloadDataToPackage("snippets-extension", "0.3.0", 5);
-            repository.addDownloadDataToPackage("snippets-extension", "0.2.0", 3);
-
-            var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":3},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":8}}');
-            expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
+    });
+    
+    it("should not delete a package when requested by a non-owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            repository.deletePackageMetadata("basic-valid-extension", "github:unknown", function (err) {
+                var registry = repository.__get__("registry");
+                expect(err).not.toBeNull();
+                expect(registry["basic-valid-extension"]).toBeDefined();
+                done();
+            });
         });
-
-        it("should update the recent download numbers", function () {
-            var registry = JSON.parse('{"test-package":{"metadata":{"name":"test-package"}, "versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}], "recent": {"20131502": 15}}}');
-            repository.__set__("registry", registry);
-
-            var recentDownloads = {"20130101": 10, "20130202": 5, "20130204": 7, "20140107": 4, "20140307": 41, "20140529": 14, "20130107": 30};
-
-            repository._updateRecentDownloadsForPackage("test-package", recentDownloads);
-            var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
-            expect(Object.keys(updatedRecentDownload).length).toBe(7);
+    });
+    
+    it("should delete a package when requested by an admin", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            expect(registry["basic-valid-extension"]).toBeDefined();
+            repository.deletePackageMetadata("basic-valid-extension", ADMIN, function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"]).toBeUndefined();
+                done();
+            });
         });
+    });
+    
+    it("should change a package's owner when requested by the owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            expect(registry["basic-valid-extension"]).toBeDefined();
+            repository.changePackageOwner("basic-valid-extension", username, "github:newuser", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].owner).toEqual("github:newuser");
+                done();
+            });
+        });
+    });
+    
+    it("should produce an error for unknown package when changing ownership", function (done) {
+        repository.changePackageOwner("does-not-exist", username, function (err) {
+            expect(err).not.toBeNull();
+            done();
+        });
+    });
+    
+    it("should not change ownership for a package when requested by a non-owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            repository.changePackageOwner("basic-valid-extension", "github:unknown", "github:badguy", function (err) {
+                var registry = repository.__get__("registry");
+                expect(err).not.toBeNull();
+                expect(registry["basic-valid-extension"].owner).toEqual("github:reallyreallyfakeuser");
+                done();
+            });
+        });
+    });
+    
+    it("should change ownership of a package when requested by an admin", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            repository.changePackageOwner("basic-valid-extension", ADMIN, "github:someuser", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].owner).toEqual("github:someuser");
+                done();
+            });
+        });
+    });
+    
+    it("should change a package's requirements when requested by the owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            repository.changePackageRequirements("basic-valid-extension", username, "<0.38.0", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].metadata.engines.brackets).toEqual("<0.38.0");
+                done();
+            });
+        });
+    });
+    
+    it("should produce an error for unknown package when changing requrements", function (done) {
+        repository.changePackageRequirements("does-not-exist", username, "<0.38.0", function (err) {
+            expect(err).not.toBeNull();
+            done();
+        });
+    });
+    
+    it("should not change requirements for a package when requested by a non-owner", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            repository.changePackageRequirements("basic-valid-extension", "github:unknown", "<0.38.0", function (err) {
+                var registry = repository.__get__("registry");
+                expect(err).not.toBeNull();
+                expect(registry["basic-valid-extension"].metadata.engines).toBeUndefined();
+                done();
+            });
+        });
+    });
+    
+    it("should change requirements of a package when requested by an admin", function (done) {
+        repository.addPackage(basicValidExtension, username, function (err, entry) {
+            var registry = repository.__get__("registry");
+            repository.changePackageRequirements("basic-valid-extension", ADMIN, "<0.38.0", function (err) {
+                expect(err).toBeNull();
+                expect(registry["basic-valid-extension"].metadata.engines.brackets).toEqual("<0.38.0");
+                done();
+            });
+        });
+    });
+});
+
+describe("Add download data", function () {
+    beforeEach(function () {
+        var registry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}]}}');
+
+        repository.__set__("registry", registry);
+    });
+
+    it("should add the download numbers to the 0.3.0 extension version and update the download total", function () {
+        repository.addDownloadDataToPackage("snippets-extension", "0.3.0", 5);
+
+        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":5}}');
+        expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
+    });
+
+    it("should add the download numbers to the 0.2.0 extension version and update the download total", function () {
+        repository.addDownloadDataToPackage("snippets-extension", "0.3.0", 5);
+        repository.addDownloadDataToPackage("snippets-extension", "0.2.0", 3);
+
+        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":3},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":8}}');
+        expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
+    });
+
+    it("should update the recent download numbers", function () {
+        var registry = JSON.parse('{"test-package":{"metadata":{"name":"test-package"}, "versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}], "recent": {"20131502": 15}}}');
+        repository.__set__("registry", registry);
+
+        var recentDownloads = {"20130101": 10, "20130202": 5, "20130204": 7, "20140107": 4, "20140307": 41, "20140529": 14, "20130107": 30};
+
+        repository._updateRecentDownloadsForPackage("test-package", recentDownloads);
+        var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
+        expect(Object.keys(updatedRecentDownload).length).toBe(7);
     });
 });

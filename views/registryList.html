@@ -2,17 +2,32 @@
 <p>To install one of these extensions in Brackets, choose <strong>File > Extension Manager</strong> and click on the Available tab.</p>
 <table class="table">
     <tr>
+        <th></th>
         <th class="ext-name">Extension</th>
         <th class="ext-desc">Description</th>
     </tr>
     {{#each registry}}
         <tr>
+            <td {{#if canAdmin}}class="info"{{/if}}></td>
             <td>
                 <a href="{{../repositoryBaseURL}}/{{metadata.name}}/{{metadata.name}}-{{metadata.version}}.zip">
                     {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}</a>
                 <span class="muted ext-version">{{metadata.version}}</span><br/>
                 <span class="muted ext-author">by {{{authorInfo}}}</span>
                 <span class="muted ext-date">on {{lastVersionDate}}</span>
+                {{#if canAdmin}}
+                    <div class="admin btn-group btn-group-xs">
+                        <button type="button" class="btn btn-default changeOwner" data-name="{{metadata.name}}">
+                            Change Owner
+                        </button>
+                        <button type="button" class="btn btn-default changeRequirements" data-name="{{metadata.name}}" data-existing="{{metadata.engines.brackets}}">
+                            Change Requirements
+                        </button>
+                        <button type="button" class="btn btn-default delete" data-name="{{metadata.name}}">
+                            Delete
+                        </button>
+                    </div>
+                {{/if}}
             </td>
             <td>
                 {{#if metadata.description}}

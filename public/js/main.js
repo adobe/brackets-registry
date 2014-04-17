@@ -1,8 +1,8 @@
-/*global Dropzone, $ */
+/*global Dropzone, $, bootbox */
 
 $(function () {
     "use strict";
-    
+
     Dropzone.options.uploadForm = {
         paramName: "extensionPackage",
         createImageThumbnails: false,
@@ -52,4 +52,94 @@ $(function () {
             }
         }
     };
+
+    function displayStatus(type, message) {
+        var $alert = $("<div>"),
+            $button = $("<button>");
+        $alert.addClass("alert").addClass("alert-" + type).addClass("alert-dismissable");
+        $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
+        $alert.append($button);
+        $("<div>").appendTo($alert).html(message);
+        $("#alertspace").append($alert);
+    }
+    
+    function displayErrorResult(errorResult) {
+        displayStatus("danger", errorResult.responseText);
+    }
+
+    $("body").on("click", "button.delete", function (event) {
+        var $target = $(event.target),
+            name = $target.data("name");
+        bootbox.confirm("Really delete " + name + "?", function (result) {
+            if (!result) {
+                return;
+            }
+            $.ajax("/package/" + name, {
+                type: "DELETE",
+                data: {
+                    "_csrf": $("meta[name='csrf-token']").attr("content")
+                }
+            }).then(function (result) {
+                displayStatus("success", name + " successfully deleted");
+                $target.parents("tr").remove();
+            }, displayErrorResult);
+        });
+    });
+
+    $("body").on("click", "button.changeOwner", function (event) {
+        var $target = $(event.target),
+            name = $target.data("name");
+        bootbox.prompt("Enter the GitHub username of the new owner for " + name, function (newOwner) {
+            if (newOwner === null) {
+                return;
+            }
+            if (!newOwner) {
+                displayStatus("info", "No new owner provided. No action taken.");
+                return;
+            }
+                
+            $.ajax("/package/" + name + "/changeOwner", {
+                type: "POST",
+                data: {
+                    "_csrf": $("meta[name='csrf-token']").attr("content"),
+                    newOwner: newOwner
+                }
+            }).then(function (result) {
+                displayStatus("success", name + " owner changed to " + newOwner);
+                $.ajax("/registryList", { datatype: "html" })
+                    .done(function (content) {
+                        $(".extension-list").html(content);
+                    });
+            }, displayErrorResult);
+        });
+    });
+
+    $("body").on("click", "button.changeRequirements", function (event) {
+        var $target = $(event.target),
+            name = $target.data("name"),
+            existing = $target.data("existing");
+
+        bootbox.prompt({
+            title: "Enter the Brackets version requirements as a semver range " + name,
+            value: existing,
+            callback: function (requirements) {
+                if (requirements === null) {
+                    return;
+                }
+                $.ajax("/package/" + name + "/changeRequirements", {
+                    type: "POST",
+                    data: {
+                        "_csrf": $("meta[name='csrf-token']").attr("content"),
+                        requirements: requirements
+                    }
+                }).then(function (result) {
+                    displayStatus("success", name + " requirements changed to " + requirements);
+                    $.ajax("/registryList", { datatype: "html" })
+                        .done(function (content) {
+                            $(".extension-list").html(content);
+                        });
+                }, displayErrorResult);
+            }
+        });
+    });
 });

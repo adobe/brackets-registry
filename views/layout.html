@@ -11,29 +11,30 @@
     </head>
     <body>
 
-        <div class="navbar navbar-fixed-top">
-            <div class="navbar-inner">
-                <div class="container">
-                    <a class="brand" href="/"><img class="logo pull-left" src="/img/brackets-24.svg">Brackets Extension Registry</a>
-                    <p class="navbar-text pull-right">
-                        {{#if user}}
-                            Signed in as {{user}} | <a href="/logout">Sign out</a>
-                        {{else}}
-                            <a href="/auth/github">Sign in via GitHub</a>
-                        {{/if}}
-						| <a href="/rss">RSS</a>
-                        {{#if helpURL}}
-                        | <a href="{{helpURL}}">Help</a>
-                        {{/if}}
-                    </p>
-                </div>
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+            <div class="container">
+                <a class="navbar-brand" href="/"><img class="logo pull-left" src="/img/brackets-24.svg">Brackets Extension Registry</a>
+                <p class="navbar-text pull-right">
+                    {{#if user}}
+                        Signed in as {{user}} | <a href="/logout">Sign out</a>
+                    {{else}}
+                        <a href="/auth/github">Sign in via GitHub</a>
+                    {{/if}}
+                    | <a href="/rss">RSS</a>
+                    {{#if helpURL}}
+                    | <a href="{{helpURL}}">Help</a>
+                    {{/if}}
+                </p>
+            </div>
+            <div id="alertspace">
+
             </div>
         </div>
-            
+
         <div class="container">
             {{{body}}}
         </div>
-        
+
         <div class="container">
             {{{customFooter}}}
         </div>

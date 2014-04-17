@@ -53,14 +53,18 @@ $(function () {
         }
     };
 
-    function displayErrorResult(errorResult) {
+    function displayStatus(type, message) {
         var $alert = $("<div>"),
             $button = $("<button>");
-        $alert.addClass("alert").addClass("alert-danger").addClass("alert-dismissable");
+        $alert.addClass("alert").addClass("alert-" + type).addClass("alert-dismissable");
         $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
         $alert.append($button);
-        $("<div>").appendTo($alert).html(errorResult.responseText);
+        $("<div>").appendTo($alert).html(message);
         $("#alertspace").append($alert);
+    }
+    
+    function displayErrorResult(errorResult) {
+        displayStatus("danger", errorResult.responseText);
     }
 
     $("body").on("click", "button.delete", function (event) {
@@ -76,13 +80,7 @@ $(function () {
                     "_csrf": $("meta[name='csrf-token']").attr("content")
                 }
             }).then(function (result) {
-                var $alert = $("<div>"),
-                    $button = $("<button>");
-                $alert.addClass("alert").addClass("alert-success").addClass("alert-dismissable");
-                $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
-                $alert.append($button);
-                $alert.append(name + " successfully deleted");
-                $("#alertspace").append($alert);
+                displayStatus("success", name + " successfully deleted");
                 $target.parents("tr").remove();
             }, displayErrorResult);
         });
@@ -92,9 +90,14 @@ $(function () {
         var $target = $(event.target),
             name = $target.data("name");
         bootbox.prompt("Enter the GitHub username of the new owner for " + name, function (newOwner) {
-            if (!newOwner) {
+            if (newOwner === null) {
                 return;
             }
+            if (!newOwner) {
+                displayStatus("info", "No new owner provided. No action taken.");
+                return;
+            }
+                
             $.ajax("/package/" + name + "/changeOwner", {
                 type: "POST",
                 data: {
@@ -102,13 +105,7 @@ $(function () {
                     newOwner: newOwner
                 }
             }).then(function (result) {
-                var $alert = $("<div>"),
-                    $button = $("<button>");
-                $alert.addClass("alert").addClass("alert-success").addClass("alert-dismissable");
-                $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
-                $alert.append($button);
-                $alert.append(name + " owner changed to " + newOwner);
-                $("#alertspace").append($alert);
+                displayStatus("success", name + " owner changed to " + newOwner);
                 $.ajax("/registryList", { datatype: "html" })
                     .done(function (content) {
                         $(".extension-list").html(content);
@@ -136,13 +133,7 @@ $(function () {
                         requirements: requirements
                     }
                 }).then(function (result) {
-                    var $alert = $("<div>"),
-                        $button = $("<button>");
-                    $alert.addClass("alert").addClass("alert-success").addClass("alert-dismissable");
-                    $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
-                    $alert.append($button);
-                    $alert.append(name + " requirements changed to " + requirements);
-                    $("#alertspace").append($alert);
+                    displayStatus("success", name + " requirements changed to " + requirements);
                     $.ajax("/registryList", { datatype: "html" })
                         .done(function (content) {
                             $(".extension-list").html(content);

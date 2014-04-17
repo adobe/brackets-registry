@@ -2,11 +2,13 @@
 <p>To install one of these extensions in Brackets, choose <strong>File > Extension Manager</strong> and click on the Available tab.</p>
 <table class="table">
     <tr>
+        <th></th>
         <th class="ext-name">Extension</th>
         <th class="ext-desc">Description</th>
     </tr>
     {{#each registry}}
         <tr>
+            <td {{#if canAdmin}}class="info"{{/if}}></td>
             <td>
                 <a href="{{../repositoryBaseURL}}/{{metadata.name}}/{{metadata.name}}-{{metadata.version}}.zip">
                     {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}</a>

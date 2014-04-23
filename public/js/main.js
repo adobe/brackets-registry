@@ -120,7 +120,7 @@ $(function () {
             existing = $target.data("existing");
 
         bootbox.prompt({
-            title: "Enter the Brackets version requirements as a semver range " + name,
+            title: "Update version requirements for all versions of your extension. Enter the Brackets version requirements as a semver range " + name,
             value: existing,
             callback: function (requirements) {
                 if (requirements === null) {

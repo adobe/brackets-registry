@@ -382,7 +382,9 @@ describe("Repository", function () {
             var registry = repository.__get__("registry");
             repository.changePackageRequirements("basic-valid-extension", username, "<0.38.0", function (err) {
                 expect(err).toBeNull();
-                expect(registry["basic-valid-extension"].metadata.engines.brackets).toEqual("<0.38.0");
+                registry["basic-valid-extension"].versions.forEach(function (version) {
+                    expect(version.brackets).toEqual("<0.38.0");
+                });
                 done();
             });
         });
@@ -400,7 +402,7 @@ describe("Repository", function () {
             repository.changePackageRequirements("basic-valid-extension", "github:unknown", "<0.38.0", function (err) {
                 var registry = repository.__get__("registry");
                 expect(err).not.toBeNull();
-                expect(registry["basic-valid-extension"].metadata.engines).toBeUndefined();
+                expect(registry["basic-valid-extension"].versions[0].brackets).toBeUndefined();
                 done();
             });
         });
@@ -411,7 +413,7 @@ describe("Repository", function () {
             var registry = repository.__get__("registry");
             repository.changePackageRequirements("basic-valid-extension", ADMIN, "<0.38.0", function (err) {
                 expect(err).toBeNull();
-                expect(registry["basic-valid-extension"].metadata.engines.brackets).toEqual("<0.38.0");
+                expect(registry["basic-valid-extension"].versions[0].brackets).toEqual("<0.38.0");
                 done();
             });
         });

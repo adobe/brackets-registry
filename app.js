@@ -35,14 +35,15 @@ var express = require("express"),
     GitHubStrategy = require("passport-github").Strategy,
     repository = require("./lib/repository"),
     routes = require("./lib/routes"),
-    logging = require("./lib/logging");
+    logging = require("./lib/logging"),
+    _ = require("lodash");
 
 // Load cert and secret configuration
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json"))),
     key,
     cert,
     ca,
-    caCertPath = path.resolve(__dirname, "config/certificate.ca");
+    caPathList;
 
 config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
@@ -72,8 +73,14 @@ if (!config.insecure) {
     cert = fs.readFileSync(path.resolve(__dirname, "config/certificate.cert"));
 }
 
-if (fs.existsSync(caCertPath)) {
-    ca = fs.readFileSync(caCertPath);
+caPathList = config.caCertificates;
+if (caPathList) {
+    if (!_.isArray(caPathList)) {
+        caPathList = [caPathList];
+    }
+    ca = caPathList.map(function (certPath) {
+        return fs.readFileSync(certPath);
+    });
 }
 
 // Check for other required config parameters

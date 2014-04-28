@@ -40,7 +40,9 @@ var express = require("express"),
 // Load cert and secret configuration
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json"))),
     key,
-    cert;
+    cert,
+    ca,
+    caCertPath = path.resolve(__dirname, "config/certificate.ca");
 
 config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
@@ -68,6 +70,10 @@ if (config.hostname === "localhost" && config.port) {
 if (!config.insecure) {
     key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key"));
     cert = fs.readFileSync(path.resolve(__dirname, "config/certificate.cert"));
+}
+
+if (fs.existsSync(caCertPath)) {
+    ca = fs.readFileSync(caCertPath);
 }
 
 // Check for other required config parameters
@@ -148,7 +154,11 @@ if (config.hostname === "localhost" && config.port) {
     console.log("HTTP Listening on ", config.port);
 } else {
     // Start the HTTPS server
-    https.createServer({key: key, cert: cert}, app).listen(config.securePort);
+    https.createServer({
+        key: key,
+        cert: cert,
+        ca: ca
+    }, app).listen(config.securePort);
     console.log("HTTPS Listening on ", config.securePort);
 
     // Redirect HTTP to HTTPS

@@ -35,12 +35,15 @@ var express = require("express"),
     GitHubStrategy = require("passport-github").Strategy,
     repository = require("./lib/repository"),
     routes = require("./lib/routes"),
-    logging = require("./lib/logging");
+    logging = require("./lib/logging"),
+    _ = require("lodash");
 
 // Load cert and secret configuration
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json"))),
     key,
-    cert;
+    cert,
+    ca,
+    caPathList;
 
 config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
@@ -68,6 +71,16 @@ if (config.hostname === "localhost" && config.port) {
 if (!config.insecure) {
     key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key"));
     cert = fs.readFileSync(path.resolve(__dirname, "config/certificate.cert"));
+}
+
+caPathList = config.caCertificates;
+if (caPathList) {
+    if (!_.isArray(caPathList)) {
+        caPathList = [caPathList];
+    }
+    ca = caPathList.map(function (certPath) {
+        return fs.readFileSync(certPath);
+    });
 }
 
 // Check for other required config parameters
@@ -148,7 +161,11 @@ if (config.hostname === "localhost" && config.port) {
     console.log("HTTP Listening on ", config.port);
 } else {
     // Start the HTTPS server
-    https.createServer({key: key, cert: cert}, app).listen(config.securePort);
+    https.createServer({
+        key: key,
+        cert: cert,
+        ca: ca
+    }, app).listen(config.securePort);
     console.log("HTTPS Listening on ", config.securePort);
 
     // Redirect HTTP to HTTPS

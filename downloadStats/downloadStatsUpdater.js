@@ -41,6 +41,7 @@ programArgs
     .option('-e, --extract', 'Extract Extension download data from downloaded logfiles')
     .option('-t, --tempFolder <path>', 'Path to temp folder (makes it easier to inspect logfiles)')
     .option('-p, --progress [true|false]', 'Print progress information')
+    .option('-u, --update <path>', 'Update the extension registry with download data from <path>')
     .option('-v, --verbose [true|false]', 'Increase the level of output')
     .parse(process.argv);
 
@@ -129,25 +130,44 @@ function extractExtensionDownloadData(progress) {
     return deferred.promise;
 }
 
+function updateExtensionDownloadData(datafile, progress) {
+    var deferred = Promise.defer();
+
+    // posting works only from localhost
+    var url = protocol + "://localhost:" + httpPort;
+
+    var client = request.newClient(url);
+    client.get('/csrfTokenForUpload', function (err, res, body) {
+        if (!err) {
+            client.sendFile("/stats?_csrf=" + body.csrf, path.resolve(datafile), null, function (err, res, body) {
+                if (err) {
+                    console.error(err);
+                    deferred.reject(err);
+                } else {
+                    log("File uploaded");
+                    deferred.resolve();
+                }
+            });
+        } else {
+            console.error(err);
+            deferred.reject(err);
+        }
+    });
+    
+    return deferred.promise;
+}
+
 function doItAll(progress) {
     downloadLogFiles(progress).then(function () {
         extractExtensionDownloadData(progress).then(function (downloadStats) {
             writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
                 // posting works only from localhost
-                var url = protocol + "://localhost:" + httpPort;
-
-                var client = request.newClient(url);
-                client.sendFile("/stats", path.resolve(__dirname, DOWNLOAD_STATS_FILENAME), null, function (err, res, body) {
-                    if (err) {
-                        console.error(err);
-                    } else {
-                        log("File uploaded");
+                var datafile = path.resolve(__dirname, DOWNLOAD_STATS_FILENAME);
+                updateExtensionDownloadData(datafile, progress).then(function () {
+                    if (!config["debug.keepTempFolder"]) {
+                        fs.rmdirSync(tempFolder);
                     }
                 });
-
-                if (!config["debug.keepTempFolder"]) {
-                    fs.rmdirSync(tempFolder);
-                }
             });
         });
     });
@@ -158,6 +178,8 @@ if (programArgs.download) {
     downloadLogFiles(programArgs.progress);
 } else if (programArgs.extract) {
     extractExtensionDownloadData(programArgs.progress);
+} else if (programArgs.update) {
+    updateExtensionDownloadData(programArgs.update, programArgs.progress);
 } else {
     doItAll(programArgs.progress);
 }

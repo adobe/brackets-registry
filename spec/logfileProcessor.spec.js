@@ -37,7 +37,7 @@ describe("LogfileProcessor", function () {
     beforeEach(function () {
         config["aws.accesskey"] = "fake";
         config["aws.secretkey"] = "secretKey";
-        config["s3.bucket"] = "no_bucket_name";
+        config["s3.logBucket"] = "no_bucket_name";
     });
 
     describe("Parse Logfiles", function () {
@@ -45,7 +45,7 @@ describe("LogfileProcessor", function () {
             try {
                 var lfp = new logfileProcessor.LogfileProcessor({});
             } catch (e) {
-                expect(e.toString()).toBe("Error: Configuration error: aws.accesskey, aws.secretkey, or s3.bucket missing");
+                expect(e.toString()).toBe("Error: Configuration error: aws.accesskey, aws.secretkey, or s3.logBucket missing");
                 done();
             }
         });
@@ -74,6 +74,15 @@ describe("LogfileProcessor", function () {
         it("should return no information for extension with rar extension", function (done) {
             var lfp = new logfileProcessor.LogfileProcessor(config);
             lfp.extractDownloadStats(path.join(testLogfileDirectory, "one-invalid-extension-log")).then(function (downloadStats) {
+                expect(downloadStats).toEqual({});
+
+                done();
+            });
+        });
+
+        it("should return no information for unsuccessful get request http status != 200", function (done) {
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            lfp.extractDownloadStats(path.join(testLogfileDirectory, "failed-get-request")).then(function (downloadStats) {
                 expect(downloadStats).toEqual({});
 
                 done();

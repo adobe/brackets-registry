@@ -22,7 +22,7 @@
  */
 
 /*jslint vars: true, plusplus: true, nomen: true, node: true, indent: 4, maxerr: 50 */
-/*global expect, describe, it, beforeEach, afterEach, createSpy, waitsFor */
+/*global expect, describe, it, beforeEach, afterEach, createSpy, waitsFor, spyOn */
 
 "use strict";
 
@@ -713,6 +713,7 @@ describe("routes", function () {
             // configure repository with filestorage
             var loaded = false;
             repo.configure({"storage": "../lib/ramstorage.js"});
+            spyOn(repo, "addDownloadDataToPackage").andCallThrough();
             var registry = JSON.parse(fs.readFileSync(path.join(path.dirname(module.filename), "testRegistry", "registry.json")));
             repo.__set__("registry", registry);
             setTimeout(function () {
@@ -728,6 +729,7 @@ describe("routes", function () {
         it("should not accept post request to update the download stats other than localhost/127.0.0.1", function () {
             req.ip = '10.32.1.2';
             req.host = 'www.adobe.com';
+
             _stats(req, res);
             expect(res.send).toHaveBeenCalledWith(403);
         });
@@ -742,7 +744,21 @@ describe("routes", function () {
             var registry = repo.getRegistry();
             expect(res.send).toHaveBeenCalledWith(202);
             expect(registry["snippets-extension"].versions[0].downloads).toBe(6);
-            expect(registry["snippets-extension"].totalDownloads).toBe(6);
+            expect(registry["snippets-extension"].totalDownloads).toBe(29);
+        });
+
+        it("should call update addDownloadDataToPackage only once per extension", function () {
+            req.ip = '127.0.0.1';
+            req.host = 'localhost';
+            req.files = {file: {path: path.join(path.dirname(module.filename), "stats/downloadStatsOneExtension.json")}};
+
+            _stats(req, res);
+
+            var registry = repo.getRegistry();
+            expect(res.send).toHaveBeenCalledWith(202);
+            expect(repo.addDownloadDataToPackage.callCount).toEqual(1);
+            expect(registry["snippets-extension"].versions[0].downloads).toBe(6);
+            expect(registry["snippets-extension"].totalDownloads).toBe(15265);
         });
     });
 });

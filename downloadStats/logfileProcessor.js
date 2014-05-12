@@ -45,10 +45,10 @@ function LogfileProcessor(config) {
     var accessKeyId = config["aws.accesskey"],
         secretAccessKey = config["aws.secretkey"];
 
-    this.bucketName = config["s3.bucket"];
+    this.bucketName = config["s3.logBucket"];
 
     if (!accessKeyId || !secretAccessKey || !this.bucketName) {
-        throw new Error("Configuration error: aws.accesskey, aws.secretkey, or s3.bucket missing");
+        throw new Error("Configuration error: aws.accesskey, aws.secretkey, or s3.logBucket missing");
     }
 
     AWS.config.update({
@@ -269,11 +269,12 @@ LogfileProcessor.prototype = {
                 if (matchResult) {
                     var uri = matchResult[8],
                         date = matchResult[3],
+                        httpStatusCode = matchResult[12],
                         downloadDate = formatDownloadDate(date);
 
 //                  // we are only interested in the Extension zip files
                     var m = uri.match(/(\S+)\/(\S+)\-(.*)\.zip/);
-                    if (m) {
+                    if (m && httpStatusCode === "200") {
                         var extensionName = m[1],
                             version = m[3];
 

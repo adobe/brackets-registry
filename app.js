@@ -128,6 +128,7 @@ app.configure(function () {
         // Must come before router (so locals are exposed properly) but after the CSRF middleware
         // (so _csrf is set).
         res.locals.csrfToken = req.csrfToken();
+
         next();
     });
     app.use(app.router);

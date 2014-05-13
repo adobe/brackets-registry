@@ -40,6 +40,7 @@ var AWS        = require("aws-sdk"),
 var AWSLogFileParserRegex = /(\S+) (\S+) (\S+ \+\S+\]) (\S+) (\S+) (\S+) (\S+) (\S+) "(\S+) (\S+) (\S+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "(.*)" (\S+)/;
 var TimeStampParserRegex = /(\d+)\/(\w+)\/(\d{4}):(\d{2}):(\d{2}):(\d{2})\s+(\+\d+)/;
 
+var LAST_ACCESSED_KEY_FILENAME = "logfileProcessing/lastAccessedKey.json";
 
 function LogfileProcessor(config) {
     var accessKeyId = config["aws.accesskey"],
@@ -85,14 +86,15 @@ function formatDownloadDate(date) {
 
 LogfileProcessor.prototype = {
     /**
-     * Write the timestamp of the last processed logfile to S3.
+     * Write the key of the last processed logfile to S3. This key is used by S3
+     * http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/frames.html
      *
-     * @param {JSON} - lastProcessedTimestamp {ts: timestamp}
+     * @param {JSON} - lastAccessedKey {Key: S3Key}
      *
-     * @return {Promise} - promise that resolves with the `lastProcessedTimestamp`
+     * @return {Promise} - promise that resolves with the `lastAccessedKey`
      * once the object was written to S3. Will rejected with err in case of any error.
      */
-    setLastProcessedTimestamp: function (lastProcessedTimestamp) {
+    setLastProcessedKey: function (lastAccessedKey) {
         var self = this,
             writeTSPromise = Promise.defer();
 
@@ -102,42 +104,42 @@ LogfileProcessor.prototype = {
 
         s3.putObject({
             Bucket: self.bucketName,
-            Key: "logfileProcessing/lastProcessedLogfile.json",
+            Key: LAST_ACCESSED_KEY_FILENAME,
             ACL: "public-read",
             ContentType: "application/json",
-            Body: new Buffer(JSON.stringify(lastProcessedTimestamp))
+            Body: new Buffer(lastAccessedKey)
         }, function (err, data) {
             if (err) {
                 writeTSPromise.reject(err);
             } else {
-                writeTSPromise.resolve(lastProcessedTimestamp);
+                writeTSPromise.resolve(lastAccessedKey);
             }
         });
 
         return writeTSPromise.promise;
     },
 
-    getLastProcessedTimestamp: function () {
+    getLastProcessedKey: function () {
+        var self = this,
+            readTSPromise = Promise.defer();
+
         var s3 = new AWS.S3.Client({
             sslEnabled: true
         });
 
-        var self = this,
-            readTSPromise = Promise.defer();
-
         s3.getObject({
             Bucket: self.bucketName,
-            Key: "logfileProcessing/lastProcessedLogfile.json"
+            Key: LAST_ACCESSED_KEY_FILENAME
         }, function (err, data) {
             if (err) {
                 if (err.code === "NoSuchKey") {
                     // return default: read all logs
-                    readTSPromise.resolve(0);
+                    readTSPromise.resolve("{}");
                 } else {
                     readTSPromise.reject(err);
                 }
             } else {
-                readTSPromise.resolve(data);
+                readTSPromise.resolve(new Buffer(data.Body).toString());
             }
         });
 
@@ -148,17 +150,13 @@ LogfileProcessor.prototype = {
      * Download the S3 logfiles into the directory tempFolderName. The lastProcessedTimestamp indicates the last processed logfile.
      * All previous logfiles will be skipped and not downloaded for further processing.
      * @param {String} - tempFolderName temp location to store the logfiles
-     * @param {String} - lastProcessedTimestamp timestamp of the logfile last processed. Should be either 0 (include all)
-     * or something greater. If undefined, we will retrieve all logfiles from S3.
+     * @param {String} - lastProcessedKey timestamp of the logfile last processed. Should be either undefined (include all)
+     * or something else. If undefined, we will retrieve all logfiles from S3.
      *
      * @return {Promise} - resolved when all logfiles have been downloaded from S3.
      */
-    _downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
+    _downloadLogfiles: function (tempFolderName, lastProcessedKey) {
         var self = this;
-
-        if (!lastProcessedTimestamp) {
-            lastProcessedTimestamp = 0;
-        }
 
         var s3 = new AWS.S3.Client({
             sslEnabled: true
@@ -181,56 +179,96 @@ LogfileProcessor.prototype = {
             return fileWrittenPromise.promise;
         }
 
-        s3.listObjects({Bucket: self.bucketName}, function (err, data) {
-            var fq = new FileQueue(100);
+        function listObjects(bucketName, nextMarker, maxKeys) {
+            var listObjectPromise = Promise.defer(),
+                allPromises = [];
 
-            var allPromises = data.Contents.map(function (obj) {
-                if (new Date(obj.LastModified) > lastProcessedTimestamp) {
-                    var promise = _writeLogfileHelper(fq, obj);
-
-                    promise.then(function () {
-                        globalPromise.progress(".");
-                    });
-
-                    return promise;
+            function _listObjects(bucketName, nextMarker, maxKeys) {
+                var params = {Bucket: bucketName};
+                if (nextMarker) {
+                    params.Marker = nextMarker;
                 }
-            });
 
-            // get the last logfiles timestamp
-            var ts;
-            if (data.Contents.length) {
-                var lastLogfileObject = data.Contents[data.Contents.length - 1];
-                ts = lastLogfileObject.LastModified;
+                if (maxKeys) {
+                    params.MaxKeys = maxKeys;
+                }
+
+                s3.listObjects(params, function (err, data) {
+                    var fq = new FileQueue(150);
+
+                    if (data) {
+                        var promises = data.Contents.map(function (obj) {
+                            var promise = _writeLogfileHelper(fq, obj);
+
+                            promise.then(function () {
+                                globalPromise.progress(".");
+                            });
+
+                            return promise;
+                        });
+                        // flatten the array
+                        promises.forEach(function (item) { allPromises.push(item); });
+                        if (data.IsTruncated) {
+                            var nextMarker = data.Contents[data.Contents.length - 1].Key;
+                            _listObjects(bucketName, nextMarker, maxKeys);
+                        } else {
+                            var ts;
+                            if (data.Contents.length) {
+                                var lastLogfileObject = data.Contents[data.Contents.length - 1];
+                                ts = lastLogfileObject.Key;
+                            }
+
+                            Promise.settle(allPromises).then(function () {
+                                listObjectPromise.resolve(ts);
+                            });
+                        }
+                    }
+                });
+
+                return listObjectPromise.promise;
             }
 
-            Promise.settle(allPromises).then(function () {
-                globalPromise.resolve(ts);
-            });
+            return _listObjects(bucketName, nextMarker, maxKeys);
+        }
+
+        listObjects(self.bucketName, lastProcessedKey).then(function (ts) {
+            globalPromise.resolve(ts);
         });
 
         return globalPromise.promise;
     },
 
-    downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
+    downloadLogfiles: function (tempFolderName) {
         var self = this,
             downloadLogfilePromise = Promise.defer();
 
-        self.getLastProcessedTimestamp().then(function (timestamp) {
-            var promise = self._downloadLogfiles(tempFolderName, timestamp);
-            promise.then(function (timestampLastProcessedLogfile) {
-                var lastProcessedTimestamp = {ts: Date.parse(timestampLastProcessedLogfile)};
-                self.setLastProcessedTimestamp(lastProcessedTimestamp).then(function () {
-                    downloadLogfilePromise.resolve(timestampLastProcessedLogfile);
-                }, function (err) {
-                    downloadLogfilePromise.reject(err);
-                });
+        self.getLastProcessedKey().then(function (lastProcessedKeyJson) {
+            var lastKeyJson = JSON.parse(lastProcessedKeyJson);
+
+            var lastKey;
+            if (lastKeyJson.hasOwnProperty("Key")) {
+                lastKey = lastKeyJson.Key;
+            }
+
+            var promise = self._downloadLogfiles(tempFolderName, lastKey);
+            promise.then(function (lastProcessedLogfileKey) {
+                // only update if some logfile has been processed
+                if (lastProcessedLogfileKey) {
+                    var key = JSON.stringify({"Key": lastProcessedLogfileKey});
+
+                    self.setLastProcessedKey(key).then(function () {
+                        downloadLogfilePromise.resolve(key);
+                    }, function (err) {
+                        downloadLogfilePromise.reject(err);
+                    });
+                }
             });
 
             promise.progressed(function (value) {
                 downloadLogfilePromise.progress(value);
             });
         }, function () {
-            downloadLogfilePromise.reject("Error downloading last timestamp");
+            downloadLogfilePromise.reject("Error retrieving key for last accessed logfile entry.");
         });
 
         return downloadLogfilePromise.promise;

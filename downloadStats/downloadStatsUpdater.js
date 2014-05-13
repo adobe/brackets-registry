@@ -95,7 +95,7 @@ function downloadLogFiles(progress) {
 
     var logfileProcessor = new LogfileProcessor(config);
     var promise = logfileProcessor.downloadLogfiles(tempFolder);
-    promise.then(function (timestampLastProcessedLogfile) {
+    promise.then(function (lastProcessedKey) {
         deferred.resolve();
     });
 

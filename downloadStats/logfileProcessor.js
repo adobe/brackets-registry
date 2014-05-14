@@ -215,7 +215,7 @@ LogfileProcessor.prototype = {
                             _listObjects(bucketName, nextMarker, maxKeys);
                         } else {
                             var key,
-                                i = data.Contents.length;
+                                i = data.Contents.length - 1;
 
                             // Skip any files in subfolders
                             while (i >= 0) {

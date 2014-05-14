@@ -206,20 +206,31 @@ LogfileProcessor.prototype = {
 
                             return promise;
                         });
+
                         // flatten the array
                         promises.forEach(function (item) { allPromises.push(item); });
+
                         if (data.IsTruncated) {
                             var nextMarker = data.Contents[data.Contents.length - 1].Key;
                             _listObjects(bucketName, nextMarker, maxKeys);
                         } else {
-                            var ts;
-                            if (data.Contents.length) {
-                                var lastLogfileObject = data.Contents[data.Contents.length - 1];
-                                ts = lastLogfileObject.Key;
+                            var key,
+                                i = data.Contents.length;
+
+                            // Skip any files in subfolders
+                            while (i >= 0) {
+                                var lastLogfileObject = data.Contents[i];
+                                // Key without "/" is a file in this bucket and not in any subdirectory
+                                if (lastLogfileObject.Key.indexOf("/") === -1) {
+                                    key = lastLogfileObject.Key;
+                                    break;
+                                }
+
+                                i = i - 1;
                             }
 
                             Promise.settle(allPromises).then(function () {
-                                listObjectPromise.resolve(ts);
+                                listObjectPromise.resolve(key);
                             });
                         }
                     }
@@ -231,8 +242,8 @@ LogfileProcessor.prototype = {
             return _listObjects(bucketName, nextMarker, maxKeys);
         }
 
-        listObjects(self.bucketName, lastProcessedKey).then(function (ts) {
-            globalPromise.resolve(ts);
+        listObjects(self.bucketName, lastProcessedKey).then(function (key) {
+            globalPromise.resolve(key);
         });
 
         return globalPromise.promise;

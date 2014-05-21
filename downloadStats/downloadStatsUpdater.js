@@ -137,23 +137,16 @@ function updateExtensionDownloadData(datafile, progress) {
     var url = protocol + "://localhost:" + httpPort;
 
     var client = request.newClient(url);
-    client.get('/csrfTokenForUpload', function (err, res, body) {
-        if (!err) {
-            client.sendFile("/stats?_csrf=" + body.csrf, path.resolve(datafile), null, function (err, res, body) {
-                if (err) {
-                    console.error(err);
-                    deferred.reject(err);
-                } else {
-                    log("File uploaded");
-                    deferred.resolve();
-                }
-            });
-        } else {
+    client.sendFile("/stats", path.resolve(datafile), null, function (err, res, body) {
+        if (err) {
             console.error(err);
             deferred.reject(err);
+        } else {
+            log("File uploaded");
+            deferred.resolve();
         }
     });
-    
+
     return deferred.promise;
 }
 

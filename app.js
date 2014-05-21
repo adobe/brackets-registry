@@ -35,6 +35,7 @@ var express = require("express"),
     GitHubStrategy = require("passport-github").Strategy,
     repository = require("./lib/repository"),
     routes = require("./lib/routes"),
+    downloadData = require("./lib/downloadData"),
     logging = require("./lib/logging");
 
 // Load cert and secret configuration
@@ -114,6 +115,7 @@ app.configure(function () {
     app.set("views", path.resolve(__dirname, "views"));
     app.set("view engine", "html");
     app.engine("html", require("hbs").__express);
+    
     app.use(express.favicon(path.resolve(__dirname, "public/favicon.ico")));
     app.use(express.logger("dev"));
     app.use(express.limit("5mb"));
@@ -121,6 +123,10 @@ app.configure(function () {
     app.use(express.bodyParser());
     app.use(express.methodOverride());
     app.use(express.session({ secret: config.sessionSecret }));
+
+    // this route is accessible from localhost only and no csrf should be applied
+    app.post("/stats", downloadData.upload);
+    
     app.use(passport.initialize());
     app.use(passport.session());
     app.use(express.csrf());

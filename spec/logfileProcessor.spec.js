@@ -107,9 +107,112 @@ describe("LogfileProcessor", function () {
 
             logfileProcessor.__set__("AWS", AWS);
             var lfp = new logfileProcessor.LogfileProcessor(config);
-            lfp.getRecentDownloads(path.join(testLogfileDirectory, "bunchOfLogfiles")).then(function (downloadStats) {
+            lfp.downloadLogfiles(path.join(testLogfileDirectory, "bunchOfLogfiles")).then(function (downloadStats) {
                 expect(18).toBe(Object.keys(downloadStats.extensions).length);
                 expect(2).toBe(Object.keys(downloadStats.extensions[0]["incompatible-version"].downloads.recent).length);
+                done();
+            });
+        });
+    });
+    
+    describe("LastAccessKey", function () {
+        function configureAWSSpy(s3) {
+            var AWS = {
+                config: {
+                    update: jasmine.createSpy()
+                },
+                S3: {
+                    Client: function (arg) { return s3; }
+                }
+            };
+            
+            return AWS;
+        }
+
+        it("should handle error properly when retrieving lastAccessKey", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, {data: []}); },
+                getObject: function (options, callback) { callback({msg: "Fail", code: 15271}, null); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var p = lfp.downloadLogfiles('thisPathDoesntMatter');
+            
+            p.then(null, function (result) {
+                expect("Error retrieving key for last accessed logfile entry. {\"msg\":\"Fail\",\"code\":15271}").toEqual(result);
+                done();
+            });
+        });
+
+        xit("should handle exception properly when retrieving lastAccessKey", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, {data: []}); },
+                getObject: function (options, callback) { throw new Error('Kaboom'); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            lfp.downloadLogfiles('thisPathDoesntMatter').catch(function (result) {
+                expect("Kaboom").toEqual(result);
+                done();
+            });
+        });
+
+        it("should return empty JSON object if lastAccessKey is unavailable", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, null); },
+                getObject: function (options, callback) { callback({msg: "Fail", code: "NoSuchKey"}, null); },
+                putObject: function (options, callback) { callback(null, {"Key": "Zatter"}); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles('thisPathDoesntMatter');
+            promise.then(function (result) {
+                expect(result).toBeUndefined();
+                done();
+            });
+        });
+
+        xit("should return the lastAccessKey after successful write", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, null); },
+                getObject: function (options, callback) {
+                    var key = {"Key": "OldKey"};
+                    var data = {"Body": new Buffer(JSON.stringify(key))};
+
+                    callback(null, data);
+                },
+                putObject: function (options, callback) { callback(null, {"Key": "NewKey"}); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles('thisPathDoesntMatter');
+            promise.then(function (result) {
+                expect(JSON.stringify({"Key": "NewKey"})).toEqual(JSON.stringify(result));
+                done();
+            });
+        });
+
+        xit("should handle error when writing lastAccessKey", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, null); },
+                getObject: function (options, callback) { callback({msg: "Fail", code: "NoSuchKey"}, null); },
+                putObject: function (options, callback) { callback({msg: 'Write failed'}, null); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles('###');
+            promise.error(function (result) {
+                expect(result).toBeUndefined();
                 done();
             });
         });

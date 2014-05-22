@@ -95,55 +95,62 @@ LogfileProcessor.prototype = {
      * once the object was written to S3. Will rejected with err in case of any error.
      */
     setLastProcessedKey: function (lastAccessedKey) {
-        var self = this,
-            writeTSPromise = Promise.defer();
+        var self = this;
 
         var s3 = new AWS.S3.Client({
             sslEnabled: true
         });
 
-        s3.putObject({
-            Bucket: self.bucketName,
-            Key: LAST_ACCESSED_KEY_FILENAME,
-            ACL: "public-read",
-            ContentType: "application/json",
-            Body: new Buffer(lastAccessedKey)
-        }, function (err, data) {
-            if (err) {
-                writeTSPromise.reject(err);
-            } else {
-                writeTSPromise.resolve(lastAccessedKey);
-            }
+        return new Promise(function (resolve, reject) {
+            s3.putObject({
+                Bucket: self.bucketName,
+                Key: LAST_ACCESSED_KEY_FILENAME,
+                ACL: "public-read",
+                ContentType: "application/json",
+                Body: new Buffer(lastAccessedKey)
+            }, function (err, data) {
+                if (err) {
+                    console.log("REJECT");
+                    reject(err);
+                } else {
+                    resolve(lastAccessedKey);
+                }
+            });
         });
-
-        return writeTSPromise.promise;
     },
 
+    /**
+     * Retrieve the key of the last processed object in the S3 bucket.
+     * The key is stored as simple JSON {Key: S3Key}.
+     * 
+     * @return {Promise} promise that resolved when the JSON was successfully retrieved.
+     * The promise is resolved with an empty object, if the JSON object can't be found in the S3 bucket.
+     * In case of an error, the promise is rejected with the err.
+     */
     getLastProcessedKey: function () {
-        var self = this,
-            readTSPromise = Promise.defer();
+        var self = this;
 
         var s3 = new AWS.S3.Client({
             sslEnabled: true
         });
 
-        s3.getObject({
-            Bucket: self.bucketName,
-            Key: LAST_ACCESSED_KEY_FILENAME
-        }, function (err, data) {
-            if (err) {
-                if (err.code === "NoSuchKey") {
-                    // return default: read all logs
-                    readTSPromise.resolve("{}");
+        return new Promise(function (resolve, reject) {
+            s3.getObject({
+                Bucket: self.bucketName,
+                Key: LAST_ACCESSED_KEY_FILENAME
+            }, function (err, data) {
+                if (err) {
+                    if (err.code === "NoSuchKey") {
+                        // return default: read all logs
+                        resolve("{}");
+                    } else {
+                        reject(err);
+                    }
                 } else {
-                    readTSPromise.reject(err);
+                    resolve(new Buffer(data.Body).toString());
                 }
-            } else {
-                readTSPromise.resolve(new Buffer(data.Body).toString());
-            }
+            });
         });
-
-        return readTSPromise.promise;
     },
 
     /**
@@ -179,6 +186,16 @@ LogfileProcessor.prototype = {
             return fileWrittenPromise.promise;
         }
 
+        /**
+         * This function will list objects in the S3 bucket. and it can take care of
+         * paginated results with the nextMarker parameter. If this argument is provided,
+         * listObjects will return the objects that are 
+         * 
+         * @param {!String} bucketName - name of the bucket.
+         * @param {?String} nextMarker - specifies the key to start with when listing objects in a bucket.
+         * @param {?String} maxKeys - specifies how many objects should be returned on maximum with this call.
+         *                            Defaults to 1000 if not specified (this is the API default)
+         */
         function listObjects(bucketName, nextMarker, maxKeys) {
             var listObjectPromise = Promise.defer(),
                 allPromises = [];
@@ -197,18 +214,15 @@ LogfileProcessor.prototype = {
                     var fq = new FileQueue(150);
 
                     if (data) {
-                        var promises = data.Contents.map(function (obj) {
+                        data.Contents.forEach(function (obj) {
                             var promise = _writeLogfileHelper(fq, obj);
 
                             promise.then(function () {
                                 globalPromise.progress(".");
                             });
 
-                            return promise;
+                            allPromises.push(promise);
                         });
-
-                        // flatten the array
-                        promises.forEach(function (item) { allPromises.push(item); });
 
                         if (data.IsTruncated) {
                             var nextMarker = data.Contents[data.Contents.length - 1].Key;
@@ -233,6 +247,8 @@ LogfileProcessor.prototype = {
                                 listObjectPromise.resolve(key);
                             });
                         }
+                    } else {
+                        listObjectPromise.resolve();
                     }
                 });
 
@@ -242,47 +258,58 @@ LogfileProcessor.prototype = {
             return _listObjects(bucketName, nextMarker, maxKeys);
         }
 
-        listObjects(self.bucketName, lastProcessedKey).then(function (key) {
-            globalPromise.resolve(key);
-        });
-
-        return globalPromise.promise;
+        return listObjects(self.bucketName, lastProcessedKey);
     },
 
+    /**
+     * Download all the logfiles from the S3 bucket into the folder specified by
+     * tempFolderName for further processing.
+     * 
+     * @param {!String} tempFolderName - path to a valid temp folder location
+     * 
+     * @return {Promise} - resolve with the object key of the last processed object
+     * reject with error string in case of an error
+     */
     downloadLogfiles: function (tempFolderName) {
-        var self = this,
-            downloadLogfilePromise = Promise.defer();
+        var self = this;
 
-        self.getLastProcessedKey().then(function (lastProcessedKeyJson) {
+        function _getValidKeyFromJson(lastProcessedKeyJson) {
             var lastKeyJson = JSON.parse(lastProcessedKeyJson);
 
             var lastKey;
             if (lastKeyJson.hasOwnProperty("Key")) {
                 lastKey = lastKeyJson.Key;
             }
+            
+            return lastKey;
+        }
+        
+        return new Promise(function (resolve, reject) {
+            return self.getLastProcessedKey().then(function (lastProcessedKeyJson) {
+                var promise = self._downloadLogfiles(tempFolderName, _getValidKeyFromJson(lastProcessedKeyJson));
+                promise.then(function (lastProcessedLogfileKey) {
+                    if (lastProcessedLogfileKey) {
+                        var key = JSON.stringify({"Key": lastProcessedLogfileKey});
 
-            var promise = self._downloadLogfiles(tempFolderName, lastKey);
-            promise.then(function (lastProcessedLogfileKey) {
-                // only update if some logfile has been processed
-                if (lastProcessedLogfileKey) {
-                    var key = JSON.stringify({"Key": lastProcessedLogfileKey});
+                        self.setLastProcessedKey(key).then(function () {
+                            resolve(key);
+                        }, function (err) {
+                            reject("Error writing lastProcessedKey " + JSON.stringify(err));
+                        }).catch(function (err) {
+                            reject(err);
+                        });
+                    } else {
+                        return resolve();
+                    }
+                }, function (err) {
+                    reject("Error downloading data. " + JSON.stringify(err));
+                });
 
-                    self.setLastProcessedKey(key).then(function () {
-                        downloadLogfilePromise.resolve(key);
-                    }, function (err) {
-                        downloadLogfilePromise.reject(err);
-                    });
-                }
+                return promise;
+            }, function (err) {
+                reject("Error retrieving key for last accessed logfile entry. " + JSON.stringify(err));
             });
-
-            promise.progressed(function (value) {
-                downloadLogfilePromise.progress(value);
-            });
-        }, function () {
-            downloadLogfilePromise.reject("Error retrieving key for last accessed logfile entry.");
         });
-
-        return downloadLogfilePromise.promise;
     },
 
     /**

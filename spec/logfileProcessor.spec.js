@@ -93,7 +93,7 @@ describe("LogfileProcessor", function () {
     describe("Create recent download stats", function () {
         xit("should collect the recent download data", function (done) {
             var S3 = {
-                listObjects: function (bucket, callback) { callback(null, {Contents: []}); }
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); }
             };
 
             var AWS = {
@@ -131,7 +131,7 @@ describe("LogfileProcessor", function () {
 
         it("should handle error properly when retrieving lastAccessKey", function (done) {
             var S3 = {
-                listObjects: function (bucket, callback) { callback(null, {data: []}); },
+                listObjects: function (bucket, callback) { callback(null, {Contents: []}); },
                 getObject: function (options, callback) { callback({msg: "Fail", code: 15271}, null); }
             };
 
@@ -148,8 +148,8 @@ describe("LogfileProcessor", function () {
 
         xit("should handle exception properly when retrieving lastAccessKey", function (done) {
             var S3 = {
-                listObjects: function (bucket, callback) { callback(null, {data: []}); },
-                getObject: function (options, callback) { throw new Error('Kaboom'); }
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); },
+                getObject: function (options, callback) { setTimeout(function () { throw new Error('Kaboom'); }, 100); }
             };
 
             logfileProcessor.__set__("AWS", configureAWSSpy(S3));
@@ -163,7 +163,7 @@ describe("LogfileProcessor", function () {
 
         it("should return empty JSON object if lastAccessKey is unavailable", function (done) {
             var S3 = {
-                listObjects: function (bucket, callback) { callback(null, null); },
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); },
                 getObject: function (options, callback) { callback({msg: "Fail", code: "NoSuchKey"}, null); },
                 putObject: function (options, callback) { callback(null, {"Key": "Zatter"}); }
             };
@@ -180,7 +180,7 @@ describe("LogfileProcessor", function () {
 
         xit("should return the lastAccessKey after successful write", function (done) {
             var S3 = {
-                listObjects: function (bucket, callback) { callback(null, null); },
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); },
                 getObject: function (options, callback) {
                     var key = {"Key": "OldKey"};
                     var data = {"Body": new Buffer(JSON.stringify(key))};
@@ -202,7 +202,7 @@ describe("LogfileProcessor", function () {
 
         xit("should handle error when writing lastAccessKey", function (done) {
             var S3 = {
-                listObjects: function (bucket, callback) { callback(null, null); },
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); },
                 getObject: function (options, callback) { callback({msg: "Fail", code: "NoSuchKey"}, null); },
                 putObject: function (options, callback) { callback({msg: 'Write failed'}, null); }
             };

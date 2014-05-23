@@ -110,7 +110,6 @@ LogfileProcessor.prototype = {
                 Body: new Buffer(lastAccessedKey)
             }, function (err, data) {
                 if (err) {
-                    console.log("REJECT");
                     reject(err);
                 } else {
                     resolve(lastAccessedKey);
@@ -144,7 +143,7 @@ LogfileProcessor.prototype = {
                         // return default: read all logs
                         resolve("{}");
                     } else {
-                        reject(err);
+                        reject("Error retrieving key for last accessed logfile entry. " + JSON.stringify(err));
                     }
                 } else {
                     resolve(new Buffer(data.Body).toString());
@@ -152,7 +151,6 @@ LogfileProcessor.prototype = {
             });
         });
     },
-
     /**
      * Download the S3 logfiles into the directory tempFolderName. The lastProcessedTimestamp indicates the last processed logfile.
      * All previous logfiles will be skipped and not downloaded for further processing.
@@ -213,7 +211,12 @@ LogfileProcessor.prototype = {
                 s3.listObjects(params, function (err, data) {
                     var fq = new FileQueue(150);
 
-                    if (data) {
+                    if (err) {
+                        listObjectPromise.reject(err);
+                        return;
+                    }
+
+                    if (data.Contents.length) {
                         data.Contents.forEach(function (obj) {
                             var promise = _writeLogfileHelper(fq, obj);
 
@@ -245,6 +248,10 @@ LogfileProcessor.prototype = {
 
                             Promise.settle(allPromises).then(function () {
                                 listObjectPromise.resolve(key);
+                            }, function (err) {
+                                listObjectPromise.reject(err);
+                            }, function (value) {
+                                listObjectPromise.progress(value);
                             });
                         }
                     } else {
@@ -294,20 +301,23 @@ LogfileProcessor.prototype = {
                         self.setLastProcessedKey(key).then(function () {
                             resolve(key);
                         }, function (err) {
+                            console.log("Error:", err);
                             reject("Error writing lastProcessedKey " + JSON.stringify(err));
                         }).catch(function (err) {
                             reject(err);
                         });
                     } else {
-                        return resolve();
+                        resolve();
                     }
                 }, function (err) {
                     reject("Error downloading data. " + JSON.stringify(err));
+                }).catch(function (err) {
+                    reject(JSON.stringify(err));
                 });
 
                 return promise;
             }, function (err) {
-                reject("Error retrieving key for last accessed logfile entry. " + JSON.stringify(err));
+                reject(err);
             });
         });
     },

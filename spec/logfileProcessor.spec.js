@@ -291,7 +291,7 @@ describe("LogfileProcessor", function () {
             var lfp = new logfileProcessor.LogfileProcessor(config);
             var promise = lfp.downloadLogfiles(tmpDir.path);
             promise.error(function (result) {
-                expect("Error: Error writing key for last accessed logfile key. {\"Err\":\"Write failed\"}").toEqual(result.toString());
+                expect("Error: Error writing key for last accessed logfile entry. {\"Err\":\"Write failed\"}").toEqual(result.toString());
                 done();
             });
         });

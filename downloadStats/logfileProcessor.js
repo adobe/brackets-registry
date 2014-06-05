@@ -110,7 +110,7 @@ LogfileProcessor.prototype = {
                 Body: new Buffer(lastAccessedKey)
             }, function (err, data) {
                 if (err) {
-                    reject(err);
+                    reject(new Error("Error writing key for last accessed logfile entry. " + JSON.stringify(err)));
                 } else {
                     resolve(lastAccessedKey);
                 }
@@ -143,7 +143,7 @@ LogfileProcessor.prototype = {
                         // return default: read all logs
                         resolve("{}");
                     } else {
-                        reject("Error retrieving key for last accessed logfile entry. " + JSON.stringify(err));
+                        reject(new Error("Error retrieving key for last accessed logfile entry. " + JSON.stringify(err)));
                     }
                 } else {
                     resolve(new Buffer(data.Body).toString());
@@ -290,33 +290,32 @@ LogfileProcessor.prototype = {
             
             return lastKey;
         }
+
+        function _setLastProcessedLogFileKey(lastProcessedLogfileKey) {
+            return new Promise(function (resolve, reject) {
+                if (lastProcessedLogfileKey) {
+                    var key = JSON.stringify({"Key": lastProcessedLogfileKey});
+
+                    self.setLastProcessedKey(key).then(function () {
+                        resolve(key);
+                    }).catch(function (err) {
+                        reject(err);
+                    });
+                } else {
+                    resolve();
+                }
+            });
+        }
         
         return new Promise(function (resolve, reject) {
-            return self.getLastProcessedKey().then(function (lastProcessedKeyJson) {
-                var promise = self._downloadLogfiles(tempFolderName, _getValidKeyFromJson(lastProcessedKeyJson));
-                promise.then(function (lastProcessedLogfileKey) {
-                    if (lastProcessedLogfileKey) {
-                        var key = JSON.stringify({"Key": lastProcessedLogfileKey});
-
-                        self.setLastProcessedKey(key).then(function () {
-                            resolve(key);
-                        }, function (err) {
-                            console.log("Error:", err);
-                            reject("Error writing lastProcessedKey " + JSON.stringify(err));
-                        }).catch(function (err) {
-                            reject(err);
-                        });
-                    } else {
-                        resolve();
-                    }
-                }, function (err) {
-                    reject("Error downloading data. " + JSON.stringify(err));
-                }).catch(function (err) {
-                    reject(JSON.stringify(err));
-                });
-
-                return promise;
-            }, function (err) {
+            return Promise.resolve().then(function () {
+                return self.getLastProcessedKey();
+            }).then(function (lastProcessedKeyJson) {
+                return self._downloadLogfiles(tempFolderName, _getValidKeyFromJson(lastProcessedKeyJson));
+            }).then(function (key) {
+                return _setLastProcessedLogFileKey(key);
+            }).then(resolve)
+            .catch(function (err) {
                 reject(err);
             });
         });

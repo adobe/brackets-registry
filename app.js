@@ -125,7 +125,7 @@ app.configure(function () {
     app.use(express.session({ secret: config.sessionSecret }));
 
     // this route is accessible from localhost only and no csrf should be applied
-    app.post("/stats", downloadData.upload);
+    app.post("/stats", downloadData.collectDownloadedData);
     
     app.use(passport.initialize());
     app.use(passport.session());

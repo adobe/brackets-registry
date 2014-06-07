@@ -307,17 +307,10 @@ LogfileProcessor.prototype = {
             });
         }
         
-        return new Promise(function (resolve, reject) {
-            return Promise.resolve().then(function () {
-                return self.getLastProcessedKey();
-            }).then(function (lastProcessedKeyJson) {
-                return self._downloadLogfiles(tempFolderName, _getValidKeyFromJson(lastProcessedKeyJson));
-            }).then(function (key) {
-                return _setLastProcessedLogFileKey(key);
-            }).then(resolve)
-            .catch(function (err) {
-                reject(err);
-            });
+        return self.getLastProcessedKey().then(function (lastProcessedKeyJson) {
+            return self._downloadLogfiles(tempFolderName, _getValidKeyFromJson(lastProcessedKeyJson));
+        }).then(function (key) {
+            return _setLastProcessedLogFileKey(key);
         });
     },
 

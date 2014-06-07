@@ -1,0 +1,13 @@
+{
+    "jslint.options": {
+        "vars": true,
+        "plusplus": true,
+        "devel": true,
+        "nomen": true,
+        "maxerr": 50,
+        "es5": true
+    },
+    "defaultExtension": "js",
+    "spaceUnits": 4,
+    "useTabChar": false
+}

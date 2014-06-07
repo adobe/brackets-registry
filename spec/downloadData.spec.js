@@ -32,7 +32,7 @@ var rewire         = require("rewire"),
     path           = require("path");
 
 // Pull out private functions we want to test
-var _upload = downloadData.__get__("_upload");
+var _collectDownloadedData = downloadData.__get__("_collectDownloadedData");
 
 describe("Download Data", function () {
     var req, res;
@@ -73,7 +73,7 @@ describe("Download Data", function () {
             req.ip = '10.32.1.2';
             req.host = 'www.adobe.com';
 
-            _upload(req, res);
+            _collectDownloadedData(req, res);
             expect(res.send).toHaveBeenCalledWith(403);
         });
 
@@ -82,7 +82,7 @@ describe("Download Data", function () {
             req.host = 'localhost';
             req.files = {file: {path: path.join(path.dirname(module.filename), "stats/downloadStats.json")}};
 
-            _upload(req, res);
+            _collectDownloadedData(req, res);
 
             var registry = repo.getRegistry();
             expect(res.send).toHaveBeenCalledWith(202);
@@ -95,7 +95,7 @@ describe("Download Data", function () {
             req.host = 'localhost';
             req.files = {file: {path: path.join(path.dirname(module.filename), "stats/downloadStatsOneExtension.json")}};
 
-            _upload(req, res);
+            _collectDownloadedData(req, res);
 
             var registry = repo.getRegistry();
             expect(res.send).toHaveBeenCalledWith(202);

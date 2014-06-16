@@ -5,7 +5,8 @@
         "devel": true,
         "nomen": true,
         "maxerr": 50,
-        "es5": true
+        "es5": true,
+        "node": true
     },
     "defaultExtension": "js",
     "spaceUnits": 4,

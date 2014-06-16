@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 2013 Adobe Systems Incorporated. All rights reserved.
- *  
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- *  
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *  
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- * 
+ *
  */
 
 /*jslint vars: true, plusplus: true, nomen: true, node: true, indent: 4, maxerr: 50 */
@@ -36,12 +36,15 @@ var express = require("express"),
     repository = require("./lib/repository"),
     routes = require("./lib/routes"),
     downloadData = require("./lib/downloadData"),
-    logging = require("./lib/logging");
+    logging = require("./lib/logging"),
+    _ = require("lodash");
 
 // Load cert and secret configuration
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json"))),
     key,
-    cert;
+    cert,
+    ca,
+    caPathList;
 
 config.hostname = config.hostname || "localhost";
 config.securePort = config.securePort || 4040;
@@ -69,6 +72,16 @@ if (config.hostname === "localhost" && config.port) {
 if (!config.insecure) {
     key = fs.readFileSync(path.resolve(__dirname, "config/certificate.key"));
     cert = fs.readFileSync(path.resolve(__dirname, "config/certificate.cert"));
+}
+
+caPathList = config.caCertificates;
+if (caPathList) {
+    if (!_.isArray(caPathList)) {
+        caPathList = [caPathList];
+    }
+    ca = caPathList.map(function (certPath) {
+        return fs.readFileSync(certPath);
+    });
 }
 
 // Check for other required config parameters
@@ -115,7 +128,7 @@ app.configure(function () {
     app.set("views", path.resolve(__dirname, "views"));
     app.set("view engine", "html");
     app.engine("html", require("hbs").__express);
-    
+
     app.use(express.favicon(path.resolve(__dirname, "public/favicon.ico")));
     app.use(express.logger("dev"));
     app.use(express.limit("5mb"));
@@ -126,7 +139,7 @@ app.configure(function () {
 
     // this route is accessible from localhost only and no csrf should be applied
     app.post("/stats", downloadData.collectDownloadedData);
-    
+
     app.use(passport.initialize());
     app.use(passport.session());
     app.use(express.csrf());
@@ -140,7 +153,7 @@ app.configure(function () {
     app.use(app.router);
     // JSLint doesn't like "express.static" because static is a keyword.
     app.use(express["static"](path.resolve(__dirname, "public")));
-    
+
     // This is used for local testing with the FileStorage
     if (config.directory) {
         app.use("/files", express["static"](path.resolve(__dirname, config.directory)));
@@ -155,7 +168,11 @@ if (config.hostname === "localhost" && config.port) {
     console.log("HTTP Listening on ", config.port);
 } else {
     // Start the HTTPS server
-    https.createServer({key: key, cert: cert}, app).listen(config.securePort);
+    https.createServer({
+        key: key,
+        cert: cert,
+        ca: ca
+    }, app).listen(config.securePort);
     console.log("HTTPS Listening on ", config.securePort);
 
     // Redirect HTTP to HTTPS

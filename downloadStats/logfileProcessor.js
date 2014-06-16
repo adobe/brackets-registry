@@ -1,28 +1,25 @@
 /*
  * Copyright (c) 2014 Adobe Systems Incorporated. All rights reserved.
- *  
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- *  
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *  
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- * 
+ *
  */
-
-/*jslint vars: true, plusplus: true, devel: true, node: true, nomen: true,
- regexp: true, indent: 4, maxerr: 50 */
 
 "use strict";
 
@@ -121,7 +118,7 @@ LogfileProcessor.prototype = {
     /**
      * Retrieve the key of the last processed object in the S3 bucket.
      * The key is stored as simple JSON {Key: S3Key}.
-     * 
+     *
      * @return {Promise} promise that resolved when the JSON was successfully retrieved.
      * The promise is resolved with an empty object, if the JSON object can't be found in the S3 bucket.
      * In case of an error, the promise is rejected with the err.
@@ -187,8 +184,8 @@ LogfileProcessor.prototype = {
         /**
          * This function will list objects in the S3 bucket. and it can take care of
          * paginated results with the nextMarker parameter. If this argument is provided,
-         * listObjects will return the objects that are 
-         * 
+         * listObjects will return the objects that are
+         *
          * @param {!String} bucketName - name of the bucket.
          * @param {?String} nextMarker - specifies the key to start with when listing objects in a bucket.
          * @param {?String} maxKeys - specifies how many objects should be returned on maximum with this call.
@@ -271,9 +268,9 @@ LogfileProcessor.prototype = {
     /**
      * Download all the logfiles from the S3 bucket into the folder specified by
      * tempFolderName for further processing.
-     * 
+     *
      * @param {!String} tempFolderName - path to a valid temp folder location
-     * 
+     *
      * @return {Promise} - resolve with the object key of the last processed object
      * reject with error string in case of an error
      */
@@ -287,7 +284,7 @@ LogfileProcessor.prototype = {
             if (lastKeyJson.hasOwnProperty("Key")) {
                 lastKey = lastKeyJson.Key;
             }
-            
+
             return lastKey;
         }
 
@@ -306,7 +303,7 @@ LogfileProcessor.prototype = {
                 }
             });
         }
-        
+
         return self.getLastProcessedKey().then(function (lastProcessedKeyJson) {
             return self._downloadLogfiles(tempFolderName, _getValidKeyFromJson(lastProcessedKeyJson));
         }).then(function (key) {

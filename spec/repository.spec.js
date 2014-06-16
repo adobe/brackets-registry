@@ -428,17 +428,16 @@ describe("Add download data", function () {
     });
 
     it("should add the download numbers to the 0.3.0 extension version and update the download total", function () {
-        repository.addDownloadDataToPackage("snippets-extension", "0.3.0", 5);
+        repository.addDownloadDataToPackage("snippets-extension", {"0.3.0" : 5}, {"20130805": 5});
 
-        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":5}}');
+        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":5,"recent":{"20130805":5}}}');
         expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
     });
 
     it("should add the download numbers to the 0.2.0 extension version and update the download total", function () {
-        repository.addDownloadDataToPackage("snippets-extension", "0.3.0", 5);
-        repository.addDownloadDataToPackage("snippets-extension", "0.2.0", 3);
+        repository.addDownloadDataToPackage("snippets-extension", {"0.3.0": 5, "0.2.0": 3}, {"20130805": 8});
 
-        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":3},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":8}}');
+        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":3},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":8, "recent":{"20130805":8}}}');
         expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
     });
 

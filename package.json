@@ -24,14 +24,14 @@
     "hbs": "~2.1.0",
     "passport": "~0.1.17",
     "passport-github": "~0.1.5",
-    "brackets-extensibility": ">0.31.0",
     "semver": "2.x",
     "aws-sdk": "~2.0.0-rc9",
+    "brackets-extensibility": ">0.31.0",
     "replify": "~1.1.4",
     "clone": "~0.1.9",
     "rss": "0.2.1",
     "filequeue": "~0.5.0",
-    "bluebird": "~0.11.6-0",
+    "bluebird": "~1.2.4",
     "lodash": "~2.4.1",
     "request": "~2.31.0",
     "request-json": "~0.4.6",
@@ -42,7 +42,7 @@
     "jasmine-node": "~1.13.0",
     "rewire": "~1.1.3",
     "fs-extra": "~0.6.4",
-    "istanbul": "~0.1.22",
-    "jslint": "~0.2.8"
+    "istanbul": "~0.2.10",
+    "jslint": "~0.5.0"
   }
 }

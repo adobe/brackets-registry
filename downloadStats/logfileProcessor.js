@@ -1,28 +1,25 @@
 /*
  * Copyright (c) 2014 Adobe Systems Incorporated. All rights reserved.
- *  
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- *  
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *  
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- * 
+ *
  */
-
-/*jslint vars: true, plusplus: true, devel: true, node: true, nomen: true,
- regexp: true, indent: 4, maxerr: 50 */
 
 "use strict";
 
@@ -40,15 +37,16 @@ var AWS        = require("aws-sdk"),
 var AWSLogFileParserRegex = /(\S+) (\S+) (\S+ \+\S+\]) (\S+) (\S+) (\S+) (\S+) (\S+) "(\S+) (\S+) (\S+)" (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) "(.*)" (\S+)/;
 var TimeStampParserRegex = /(\d+)\/(\w+)\/(\d{4}):(\d{2}):(\d{2}):(\d{2})\s+(\+\d+)/;
 
+var LAST_ACCESSED_KEY_FILENAME = "logfileProcessing/lastAccessedKey.json";
 
 function LogfileProcessor(config) {
     var accessKeyId = config["aws.accesskey"],
         secretAccessKey = config["aws.secretkey"];
 
-    this.bucketName = config["s3.bucket"];
+    this.bucketName = config["s3.logBucket"];
 
     if (!accessKeyId || !secretAccessKey || !this.bucketName) {
-        throw new Error("Configuration error: aws.accesskey, aws.secretkey, or s3.bucket missing");
+        throw new Error("Configuration error: aws.accesskey, aws.secretkey, or s3.logBucket missing");
     }
 
     AWS.config.update({
@@ -85,80 +83,82 @@ function formatDownloadDate(date) {
 
 LogfileProcessor.prototype = {
     /**
-     * Write the timestamp of the last processed logfile to S3.
+     * Write the key of the last processed logfile to S3. This key is used by S3
+     * http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/frames.html
      *
-     * @param {JSON} - lastProcessedTimestamp {ts: timestamp}
+     * @param {JSON} - lastAccessedKey {Key: S3Key}
      *
-     * @return {Promise} - promise that resolves with the `lastProcessedTimestamp`
+     * @return {Promise} - promise that resolves with the `lastAccessedKey`
      * once the object was written to S3. Will rejected with err in case of any error.
      */
-    setLastProcessedTimestamp: function (lastProcessedTimestamp) {
-        var self = this,
-            writeTSPromise = Promise.defer();
+    setLastProcessedKey: function (lastAccessedKey) {
+        var self = this;
 
         var s3 = new AWS.S3.Client({
             sslEnabled: true
         });
 
-        s3.putObject({
-            Bucket: self.bucketName,
-            Key: "logfileProcessing/lastProcessedLogfile.json",
-            ACL: "public-read",
-            ContentType: "application/json",
-            Body: new Buffer(JSON.stringify(lastProcessedTimestamp))
-        }, function (err, data) {
-            if (err) {
-                writeTSPromise.reject(err);
-            } else {
-                writeTSPromise.resolve(lastProcessedTimestamp);
-            }
-        });
-
-        return writeTSPromise.promise;
-    },
-
-    getLastProcessedTimestamp: function () {
-        var s3 = new AWS.S3.Client({
-            sslEnabled: true
-        });
-
-        var self = this,
-            readTSPromise = Promise.defer();
-
-        s3.getObject({
-            Bucket: self.bucketName,
-            Key: "logfileProcessing/lastProcessedLogfile.json"
-        }, function (err, data) {
-            if (err) {
-                if (err.code === "NoSuchKey") {
-                    // return default: read all logs
-                    readTSPromise.resolve(0);
+        return new Promise(function (resolve, reject) {
+            s3.putObject({
+                Bucket: self.bucketName,
+                Key: LAST_ACCESSED_KEY_FILENAME,
+                ACL: "public-read",
+                ContentType: "application/json",
+                Body: new Buffer(lastAccessedKey)
+            }, function (err, data) {
+                if (err) {
+                    reject(new Error("Error writing key for last accessed logfile entry. " + JSON.stringify(err)));
                 } else {
-                    readTSPromise.reject(err);
+                    resolve(lastAccessedKey);
                 }
-            } else {
-                readTSPromise.resolve(data);
-            }
+            });
         });
-
-        return readTSPromise.promise;
     },
 
+    /**
+     * Retrieve the key of the last processed object in the S3 bucket.
+     * The key is stored as simple JSON {Key: S3Key}.
+     *
+     * @return {Promise} promise that resolved when the JSON was successfully retrieved.
+     * The promise is resolved with an empty object, if the JSON object can't be found in the S3 bucket.
+     * In case of an error, the promise is rejected with the err.
+     */
+    getLastProcessedKey: function () {
+        var self = this;
+
+        var s3 = new AWS.S3.Client({
+            sslEnabled: true
+        });
+
+        return new Promise(function (resolve, reject) {
+            s3.getObject({
+                Bucket: self.bucketName,
+                Key: LAST_ACCESSED_KEY_FILENAME
+            }, function (err, data) {
+                if (err) {
+                    if (err.code === "NoSuchKey") {
+                        // return default: read all logs
+                        resolve("{}");
+                    } else {
+                        reject(new Error("Error retrieving key for last accessed logfile entry. " + JSON.stringify(err)));
+                    }
+                } else {
+                    resolve(new Buffer(data.Body).toString());
+                }
+            });
+        });
+    },
     /**
      * Download the S3 logfiles into the directory tempFolderName. The lastProcessedTimestamp indicates the last processed logfile.
      * All previous logfiles will be skipped and not downloaded for further processing.
      * @param {String} - tempFolderName temp location to store the logfiles
-     * @param {String} - lastProcessedTimestamp timestamp of the logfile last processed. Should be either 0 (include all)
-     * or something greater. If undefined, we will retrieve all logfiles from S3.
+     * @param {String} - lastProcessedKey timestamp of the logfile last processed. Should be either undefined (include all)
+     * or something else. If undefined, we will retrieve all logfiles from S3.
      *
      * @return {Promise} - resolved when all logfiles have been downloaded from S3.
      */
-    _downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
+    _downloadLogfiles: function (tempFolderName, lastProcessedKey) {
         var self = this;
-
-        if (!lastProcessedTimestamp) {
-            lastProcessedTimestamp = 0;
-        }
 
         var s3 = new AWS.S3.Client({
             sslEnabled: true
@@ -181,59 +181,134 @@ LogfileProcessor.prototype = {
             return fileWrittenPromise.promise;
         }
 
-        s3.listObjects({Bucket: self.bucketName}, function (err, data) {
-            var fq = new FileQueue(100);
+        /**
+         * This function will list objects in the S3 bucket. and it can take care of
+         * paginated results with the nextMarker parameter. If this argument is provided,
+         * listObjects will return the objects that are
+         *
+         * @param {!String} bucketName - name of the bucket.
+         * @param {?String} nextMarker - specifies the key to start with when listing objects in a bucket.
+         * @param {?String} maxKeys - specifies how many objects should be returned on maximum with this call.
+         *                            Defaults to 1000 if not specified (this is the API default)
+         */
+        function listObjects(bucketName, nextMarker, maxKeys) {
+            var listObjectPromise = Promise.defer(),
+                allPromises = [];
 
-            var allPromises = data.Contents.map(function (obj) {
-                if (new Date(obj.LastModified) > lastProcessedTimestamp) {
-                    var promise = _writeLogfileHelper(fq, obj);
-
-                    promise.then(function () {
-                        globalPromise.progress(".");
-                    });
-
-                    return promise;
+            function _listObjects(bucketName, nextMarker, maxKeys) {
+                var params = {Bucket: bucketName};
+                if (nextMarker) {
+                    params.Marker = nextMarker;
                 }
-            });
 
-            // get the last logfiles timestamp
-            var ts;
-            if (data.Contents.length) {
-                var lastLogfileObject = data.Contents[data.Contents.length - 1];
-                ts = lastLogfileObject.LastModified;
+                if (maxKeys) {
+                    params.MaxKeys = maxKeys;
+                }
+
+                s3.listObjects(params, function (err, data) {
+                    var fq = new FileQueue(150);
+
+                    if (err) {
+                        listObjectPromise.reject(err);
+                        return;
+                    }
+
+                    if (data.Contents.length) {
+                        data.Contents.forEach(function (obj) {
+                            var promise = _writeLogfileHelper(fq, obj);
+
+                            promise.then(function () {
+                                globalPromise.progress(".");
+                            });
+
+                            allPromises.push(promise);
+                        });
+
+                        if (data.IsTruncated) {
+                            var nextMarker = data.Contents[data.Contents.length - 1].Key;
+                            _listObjects(bucketName, nextMarker, maxKeys);
+                        } else {
+                            var key,
+                                i = data.Contents.length - 1;
+
+                            // Skip any files in subfolders
+                            while (i >= 0) {
+                                var lastLogfileObject = data.Contents[i];
+                                // Key without "/" is a file in this bucket and not in any subdirectory
+                                if (lastLogfileObject.Key.indexOf("/") === -1) {
+                                    key = lastLogfileObject.Key;
+                                    break;
+                                }
+
+                                i = i - 1;
+                            }
+
+                            Promise.settle(allPromises).then(function () {
+                                listObjectPromise.resolve(key);
+                            }, function (err) {
+                                listObjectPromise.reject(err);
+                            }, function (value) {
+                                listObjectPromise.progress(value);
+                            });
+                        }
+                    } else {
+                        listObjectPromise.resolve();
+                    }
+                });
+
+                return listObjectPromise.promise;
             }
 
-            Promise.settle(allPromises).then(function () {
-                globalPromise.resolve(ts);
-            });
-        });
+            return _listObjects(bucketName, nextMarker, maxKeys);
+        }
 
-        return globalPromise.promise;
+        return listObjects(self.bucketName, lastProcessedKey);
     },
 
-    downloadLogfiles: function (tempFolderName, lastProcessedTimestamp) {
-        var self = this,
-            downloadLogfilePromise = Promise.defer();
+    /**
+     * Download all the logfiles from the S3 bucket into the folder specified by
+     * tempFolderName for further processing.
+     *
+     * @param {!String} tempFolderName - path to a valid temp folder location
+     *
+     * @return {Promise} - resolve with the object key of the last processed object
+     * reject with error string in case of an error
+     */
+    downloadLogfiles: function (tempFolderName) {
+        var self = this;
 
-        self.getLastProcessedTimestamp().then(function (timestamp) {
-            var promise = self._downloadLogfiles(tempFolderName, timestamp);
-            promise.then(function (timestampLastProcessedLogfile) {
-                var lastProcessedTimestamp = {ts: Date.parse(timestampLastProcessedLogfile)};
-                self.setLastProcessedTimestamp(lastProcessedTimestamp).then(function () {
-                    downloadLogfilePromise.resolve(timestampLastProcessedLogfile);
-                }, function (err) {
-                    downloadLogfilePromise.reject(err);
-                });
-            });
+        function _getValidKeyFromJson(lastProcessedKeyJson) {
+            var lastKeyJson = JSON.parse(lastProcessedKeyJson);
 
-            promise.progressed(function (value) {
-                downloadLogfilePromise.progress(value);
+            var lastKey;
+            if (lastKeyJson.hasOwnProperty("Key")) {
+                lastKey = lastKeyJson.Key;
+            }
+
+            return lastKey;
+        }
+
+        function _setLastProcessedLogFileKey(lastProcessedLogfileKey) {
+            return new Promise(function (resolve, reject) {
+                if (lastProcessedLogfileKey) {
+                    var key = JSON.stringify({"Key": lastProcessedLogfileKey});
+
+                    self.setLastProcessedKey(key).then(function () {
+                        resolve(key);
+                    }).catch(function (err) {
+                        reject(err);
+                    });
+                } else {
+                    resolve();
+                }
             });
-        }, function () {
-            downloadLogfilePromise.reject("Error downloading last timestamp");
+        }
+
+        return self.getLastProcessedKey().then(function (lastProcessedKeyJson) {
+            return self._downloadLogfiles(tempFolderName, _getValidKeyFromJson(lastProcessedKeyJson));
+        }).then(function (key) {
+            return _setLastProcessedLogFileKey(key);
         });
-
-        return downloadLogfilePromise.promise;
     },
 
     /**
@@ -269,11 +344,12 @@ LogfileProcessor.prototype = {
                 if (matchResult) {
                     var uri = matchResult[8],
                         date = matchResult[3],
+                        httpStatusCode = matchResult[12],
                         downloadDate = formatDownloadDate(date);
 
 //                  // we are only interested in the Extension zip files
                     var m = uri.match(/(\S+)\/(\S+)\-(.*)\.zip/);
-                    if (m) {
+                    if (m && httpStatusCode === "200") {
                         var extensionName = m[1],
                             version = m[3];
 

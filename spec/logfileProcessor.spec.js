@@ -28,7 +28,10 @@
 
 var rewire           = require("rewire"),
     logfileProcessor = rewire("../downloadStats/logfileProcessor"),
-    path             = require("path");
+    path             = require("path"),
+    tmp              = require("temporary"),
+    util             = require("util"),
+    Stream           = require("stream");
 
 var testLogfileDirectory = path.join(path.dirname(module.filename), "s3logfiles");
 
@@ -37,7 +40,7 @@ describe("LogfileProcessor", function () {
     beforeEach(function () {
         config["aws.accesskey"] = "fake";
         config["aws.secretkey"] = "secretKey";
-        config["s3.bucket"] = "no_bucket_name";
+        config["s3.logBucket"] = "no_bucket_name";
     });
 
     describe("Parse Logfiles", function () {
@@ -45,7 +48,7 @@ describe("LogfileProcessor", function () {
             try {
                 var lfp = new logfileProcessor.LogfileProcessor({});
             } catch (e) {
-                expect(e.toString()).toBe("Error: Configuration error: aws.accesskey, aws.secretkey, or s3.bucket missing");
+                expect(e.toString()).toBe("Error: Configuration error: aws.accesskey, aws.secretkey, or s3.logBucket missing");
                 done();
             }
         });
@@ -79,12 +82,21 @@ describe("LogfileProcessor", function () {
                 done();
             });
         });
+
+        it("should return no information for unsuccessful get request http status != 200", function (done) {
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            lfp.extractDownloadStats(path.join(testLogfileDirectory, "failed-get-request")).then(function (downloadStats) {
+                expect(downloadStats).toEqual({});
+
+                done();
+            });
+        });
     });
 
     describe("Create recent download stats", function () {
         xit("should collect the recent download data", function (done) {
             var S3 = {
-                listObjects: function (bucket, callback) { callback(null, {Contents: []}); }
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); }
             };
 
             var AWS = {
@@ -98,9 +110,188 @@ describe("LogfileProcessor", function () {
 
             logfileProcessor.__set__("AWS", AWS);
             var lfp = new logfileProcessor.LogfileProcessor(config);
-            lfp.getRecentDownloads(path.join(testLogfileDirectory, "bunchOfLogfiles")).then(function (downloadStats) {
+            lfp.downloadLogfiles(path.join(testLogfileDirectory, "bunchOfLogfiles")).then(function (downloadStats) {
                 expect(18).toBe(Object.keys(downloadStats.extensions).length);
                 expect(2).toBe(Object.keys(downloadStats.extensions[0]["incompatible-version"].downloads.recent).length);
+                done();
+            });
+        });
+    });
+    
+    describe("LastAccessKey", function () {
+        function StringReader(str) {
+            this.data = str;
+        }
+
+        util.inherits(StringReader, Stream);
+        StringReader.prototype = {
+            resume: function () {
+                // If the data is a buffer and we have an encoding (from setEncoding)
+                // then we convert the data to a String first.
+                if (this.encoding && Buffer.isBuffer(this.data)) {
+                    this.emit('data', this.data.toString(this.encoding));
+                } else {
+                // Otherwise we just emit the data as it is.
+                    this.emit('data', this.data);
+                }
+                // We emitted the entire string, so we can finish up by
+                // emitting end/close.
+                this.emit('end');
+                this.emit('close');
+            },
+            setEncoding: function (encoding) {
+                this.encoding = encoding;
+            },
+            pause: function () {
+            },
+            pipe: function (dest) {
+                dest.write(this.data);
+                dest.end('');
+            },
+            destroy: function () {
+                delete this.data;
+            }
+        };
+
+        function configureAWSSpy(s3) {
+            var AWS = {
+                config: {
+                    update: jasmine.createSpy()
+                },
+                S3: {
+                    Client: function (arg) { return s3; }
+                }
+            };
+            
+            return AWS;
+        }
+
+        it("should handle error properly when retrieving lastAccessKey", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, {Contents: []}); },
+                getObject: function (options, callback) { callback({msg: "Fail", code: 15271}, null); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles('thisPathDoesntMatter');
+
+            promise.error(function (result) {
+                expect("Error: Error retrieving key for last accessed logfile entry. {\"msg\":\"Fail\",\"code\":15271}").toEqual(result.toString());
+                done();
+            });
+        });
+
+        xit("should handle exception properly when retrieving lastAccessKey", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); },
+                getObject: function (options, callback) { setTimeout(function () { throw new Error('Kaboom'); }, 100); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            lfp.downloadLogfiles('thisPathDoesntMatter').catch(function (result) {
+                expect("Kaboom").toEqual(result);
+                done();
+            });
+        });
+
+        it("should return empty JSON object if lastAccessKey is unavailable", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, { Contents: []}); },
+                getObject: function (options, callback) { callback({msg: "Fail", code: "NoSuchKey"}, null); },
+                putObject: function (options, callback) { callback(null, {"Key": "Zatter"}); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles('thisPathDoesntMatter');
+            promise.then(function (result) {
+                expect(result).toBeUndefined();
+                done();
+            });
+        });
+
+        it("should handle error if listObject returns an error", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(new Error("Can't read object"), null); },
+                getObject: function (options, callback) { callback({msg: "Fail", code: "NoSuchKey"}, null); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles('thisPathDoesntMatter');
+            promise.error(function (result) {
+                expect(result).toEqual(result);
+                done();
+            });
+        });
+
+        it("should return the lastAccessKey after successful write", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, { Contents: [{Key: "NewKey1"}, {Key: "test/NewKey2"}], IsTruncated: false}); },
+                getObject: function (options, callback) {
+                    if (typeof (callback) === "function") {
+                        var key = {"Key": "OldKey"};
+                        var data = {"Body": new Buffer(JSON.stringify(key))};
+
+                        callback(null, data);
+                    } else {
+                        return {
+                            createReadStream: function () {
+                                return new StringReader("testdata");
+                            }
+                        };
+                    }
+                },
+                putObject: function (options, callback) { callback(null, {"Key": "NewKey"}); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            var tmpDir = new tmp.Dir();
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles(tmpDir.path);
+            promise.then(function (result) {
+                expect({Key: "NewKey"}).toEqual({ Key : 'NewKey' });
+                
+                //tmpDir.rmdir();
+                done();
+            });
+        });
+
+        it("should handle error when writing lastAccessKey", function (done) {
+            var S3 = {
+                listObjects: function (bucket, callback) { callback(null, { Contents: [{Key: "NewKey1"}, {Key: "test/NewKey2"}], IsTruncated: false}); },
+                getObject: function (options, callback) {
+                    if (typeof (callback) === "function") {
+                        var key = {"Key": "OldKey"};
+                        var data = {"Body": new Buffer(JSON.stringify(key))};
+
+                        callback(null, data);
+                    } else {
+                        return {
+                            createReadStream: function () {
+                                return new StringReader("testdata");
+                            }
+                        };
+                    }
+                },
+                putObject: function (options, callback) { callback({Err: 'Write failed'}, null); }
+            };
+
+            logfileProcessor.__set__("AWS", configureAWSSpy(S3));
+
+            
+            var tmpDir = new tmp.Dir();
+            var lfp = new logfileProcessor.LogfileProcessor(config);
+            var promise = lfp.downloadLogfiles(tmpDir.path);
+            promise.error(function (result) {
+                expect("Error: Error writing key for last accessed logfile entry. {\"Err\":\"Write failed\"}").toEqual(result.toString());
                 done();
             });
         });

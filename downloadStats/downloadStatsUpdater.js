@@ -85,6 +85,13 @@ if (tempFolder) {
     log("Using temp directory:", tempFolder);
 }
 
+/**
+ * Return a path to the download data file.
+ */
+function datafilePath() {
+    return path.resolve(__dirname, DOWNLOAD_STATS_FILENAME);
+}
+
 function downloadLogFiles(progress) {
     var deferred = Promise.defer(),
         logfileProcessor = new LogfileProcessor(config);
@@ -113,7 +120,7 @@ function extractExtensionDownloadData(progress) {
     log("Extract extension download data from logfiles in", tempFolder);
 
     promise.then(function (downloadStats) {
-        writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
+        writeFile(datafilePath(), JSON.stringify(downloadStats)).then(function () {
             deferred.resolve(downloadStats);
         });
     });
@@ -150,14 +157,14 @@ function updateExtensionDownloadData(datafile, progress) {
 function doItAll(progress) {
     downloadLogFiles(progress).then(function () {
         extractExtensionDownloadData(progress).then(function (downloadStats) {
-            writeFile(DOWNLOAD_STATS_FILENAME, JSON.stringify(downloadStats)).then(function () {
-                // posting works only from localhost
-                var datafile = path.resolve(__dirname, DOWNLOAD_STATS_FILENAME);
-                updateExtensionDownloadData(datafile, progress).then(function () {
-                    if (!config["debug.keepTempFolder"]) {
-                        fs.rmdirSync(tempFolder);
-                    }
-                });
+            // posting works only from localhost
+            updateExtensionDownloadData(datafilePath(), progress).then(function () {
+                // remove the data file after uploading the download data
+                fs.unlinkSync(datafilePath());
+
+                if (!config["debug.keepTempFolder"]) {
+                    fs.rmdirSync(tempFolder);
+                }
             });
         });
     });

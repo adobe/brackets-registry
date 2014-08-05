@@ -2,6 +2,8 @@
 
 A node.js-powered registry for Brackets extensions.
 
+__Note:__ If you discovered any issue with the extension registry or have an idea for improvement, please file a bug in the [brackets issue tracker](https://github.com/adobe/brackets/issues).
+
 ## Setup
 
 1. `npm install`

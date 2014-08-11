@@ -10,7 +10,7 @@
         <tr>
             <td {{#if canAdmin}}class="info"{{/if}}></td>
             <td>
-                <a href="{{formatDownloadURL ../repositoryBaseURL metadata.name metadata.version}}">
+                <a href="{{{formatDownloadURL ../repositoryBaseURL metadata.name metadata.version}}}">
                     {{#if metadata.title}}{{metadata.title}}{{else}}{{metadata.name}}{{/if}}</a>
                 <span class="muted ext-version">{{metadata.version}}</span><br/>
                 <span class="muted ext-author">by {{{authorInfo}}}</span>

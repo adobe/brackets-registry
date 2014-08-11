@@ -33,15 +33,15 @@ describe("Registry Utils", function () {
         it("should return the formatted url", function () {
             var formattedURL = registryUtils.formatDownloadURL("http://localhost:1234", "test-extension", "0.0.1");
 
-            expect("http://localhost:1234/test-extension/test-extension-0.0.1.zip").toBe(formattedURL);
+            expect(formattedURL).toBe("http://localhost:1234/test-extension/test-extension-0.0.1.zip");
         });
 
         it("should return the formatted url with proper url encoding", function () {
             var formattedURL = registryUtils.formatDownloadURL("http://localhost:1234", "jasonsanjose.brackets-sass", "0.4.1+sha.fc425b5");
-            expect("http://localhost:1234/jasonsanjose.brackets-sass/jasonsanjose.brackets-sass-0.4.1%2Bsha.fc425b5.zip").toBe(formattedURL);
+            expect(formattedURL).toBe("http://localhost:1234/jasonsanjose.brackets-sass/jasonsanjose.brackets-sass-0.4.1%2Bsha.fc425b5.zip");
 
             formattedURL = registryUtils.formatDownloadURL("http://localhost:1234", "test-extension", "0.0.1&<>abcdef");
-            expect("http://localhost:1234/test-extension/test-extension-0.0.1%26%3C%3Eabcdef.zip").toBe(formattedURL);
+            expect(formattedURL).toBe("http://localhost:1234/test-extension/test-extension-0.0.1%26%3C%3Eabcdef.zip");
         });
     });
 });

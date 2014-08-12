@@ -472,9 +472,7 @@ describe("Add download data", function () {
 
             expect(Object.keys(updatedRecentDownload).length).toBe(7);
             // Check that the download numbers got doubled
-            Object.keys(recentDownloads).forEach(function (key, index) {
-                expect(updatedRecentDownload[key]).toBe(recentDownloads[key]);
-            });
+            expect(updatedRecentDownload).toEqual({"20130216": 10, "20130217": 5, "20130218": 7, "20130219": 4, "20130220": 41, "20130221": 14, "20130222": 30});
         });
 
         it("should update the recent download numbers 2 times and ensure that the sum of the downloads is correct", function () {
@@ -487,9 +485,7 @@ describe("Add download data", function () {
             var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
 
             expect(Object.keys(updatedRecentDownload).length).toBe(7);
-            Object.keys(recentDownloads).forEach(function (key, index) {
-                expect(updatedRecentDownload[key]).toBe(recentDownloads[key] + recentDownloads2[key]);
-            });
+            expect(updatedRecentDownload).toEqual({"20130216": 20, "20130217": 10, "20130218": 14, "20130219": 8, "20130220": 61, "20130221": 21, "20130222": 45});
         });
 
         it("should update the recent download numbers with 3 datapoints and keep only these 3 datapoints on new extension", function () {
@@ -500,9 +496,7 @@ describe("Add download data", function () {
             var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
 
             expect(Object.keys(updatedRecentDownload).length).toBe(3);
-            expect(updatedRecentDownload["20130215"]).toBe(10);
-            expect(updatedRecentDownload["20130216"]).toBe(5);
-            expect(updatedRecentDownload["20130217"]).toBe(7);
+            expect(updatedRecentDownload).toEqual({"20130215": 10, "20130216": 5, "20130217": 7});
         });
     });
 });

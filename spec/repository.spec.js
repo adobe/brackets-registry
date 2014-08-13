@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 2013 Adobe Systems Incorporated. All rights reserved.
- *  
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"), 
- * to deal in the Software without restriction, including without limitation 
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the 
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- *  
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- *  
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- * 
+ *
  */
 
 
@@ -153,7 +153,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should reject versions that are not higher than the previous version", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             setValidationResult({
@@ -162,14 +162,14 @@ describe("Repository", function () {
                     version: "0.9.9"
                 }
             });
-            
+
             repository.addPackage("nopackage.zip", username, function (err, entry) {
                 expect(err.message).toEqual("BAD_VERSION");
                 done();
             });
         });
     });
-    
+
     it("should reject packages with validation errors", function (done) {
         setValidationResult({
             errors: [
@@ -181,7 +181,7 @@ describe("Repository", function () {
                 version: "x.231.aaa"
             }
         });
-        
+
         repository.addPackage("nopackage.zip", username, function (err, entry) {
             expect(err).not.toBeNull();
             expect(err.message).toEqual("VALIDATION_FAILED");
@@ -191,7 +191,7 @@ describe("Repository", function () {
             done();
         });
     });
-    
+
     it("should return an error if the registry is not loaded", function (done) {
         repository.__set__("registry", null);
         repository.addPackage("nopackage.zip", username, function (err, entry) {
@@ -199,7 +199,7 @@ describe("Repository", function () {
             done();
         });
     });
-    
+
     it("should return the current registry", function () {
         var registry = {
             "my-extension": {
@@ -209,7 +209,7 @@ describe("Repository", function () {
         repository.__set__("registry", registry);
         expect(repository.getRegistry()).toBe(registry);
     });
-    
+
     it("should report errors that come from the storage", function (done) {
         var storage = repository.__get__("storage");
         var expectedError = new Error("It brokeded.");
@@ -223,7 +223,7 @@ describe("Repository", function () {
             done();
         });
     });
-    
+
     it("should not update the registry if there's a storage error", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             setValidationResult({
@@ -236,13 +236,13 @@ describe("Repository", function () {
                     }
                 }
             });
-            
+
             var storage = repository.__get__("storage");
             var expectedError = new Error("It brokeded.");
             storage.savePackage = function (entry, path, callback) {
                 callback(expectedError);
             };
-            
+
             repository.addPackage("nopackage.zip", username, function (err, entry) {
                 expect(err).toBe(expectedError);
                 var registry = repository.__get__("registry");
@@ -251,7 +251,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should not allow two packages with the same title, even from the same owner", function (done) {
         setValidationResult({
             metadata: {
@@ -259,10 +259,10 @@ describe("Repository", function () {
                 version: "2.1.1"
             }
         });
-        
+
         repository.addPackage("nopackage.zip", username, function (err, entry) {
             expect(err).toBeNull();
-            
+
             setValidationResult({
                 metadata: {
                     name: "superawesome",
@@ -281,7 +281,7 @@ describe("Repository", function () {
                         version: "1.0.0"
                     }
                 });
-            
+
                 repository.addPackage("nopackage.zip", username, function (err, entry) {
                     expect(err).not.toBeNull();
                     expect(err.message).toEqual("VALIDATION_FAILED");
@@ -291,7 +291,7 @@ describe("Repository", function () {
                 });
             });
         });
-        
+
     });
 
     it("should delete a package when requested by the owner", function (done) {
@@ -305,14 +305,14 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should produce an error for unknown package", function (done) {
         repository.deletePackageMetadata("does-not-exist", username, function (err) {
             expect(err).not.toBeNull();
             done();
         });
     });
-    
+
     it("should not delete a package when requested by a non-owner", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             repository.deletePackageMetadata("basic-valid-extension", "github:unknown", function (err) {
@@ -323,7 +323,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should delete a package when requested by an admin", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             var registry = repository.__get__("registry");
@@ -335,7 +335,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should change a package's owner when requested by the owner", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             var registry = repository.__get__("registry");
@@ -347,14 +347,14 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should produce an error for unknown package when changing ownership", function (done) {
         repository.changePackageOwner("does-not-exist", username, function (err) {
             expect(err).not.toBeNull();
             done();
         });
     });
-    
+
     it("should not change ownership for a package when requested by a non-owner", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             repository.changePackageOwner("basic-valid-extension", "github:unknown", "github:badguy", function (err) {
@@ -365,7 +365,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should change ownership of a package when requested by an admin", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             var registry = repository.__get__("registry");
@@ -376,7 +376,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should change a package's requirements when requested by the owner", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             var registry = repository.__get__("registry");
@@ -389,14 +389,14 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should produce an error for unknown package when changing requrements", function (done) {
         repository.changePackageRequirements("does-not-exist", username, "<0.38.0", function (err) {
             expect(err).not.toBeNull();
             done();
         });
     });
-    
+
     it("should not change requirements for a package when requested by a non-owner", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             repository.changePackageRequirements("basic-valid-extension", "github:unknown", "<0.38.0", function (err) {
@@ -407,7 +407,7 @@ describe("Repository", function () {
             });
         });
     });
-    
+
     it("should change requirements of a package when requested by an admin", function (done) {
         repository.addPackage(basicValidExtension, username, function (err, entry) {
             var registry = repository.__get__("registry");
@@ -421,34 +421,82 @@ describe("Repository", function () {
 });
 
 describe("Add download data", function () {
-    beforeEach(function () {
-        var registry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}]}}');
+    describe("Extension version download numbers", function () {
+        beforeEach(function () {
+            var registry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}]}}');
 
-        repository.__set__("registry", registry);
+            repository.__set__("registry", registry);
+        });
+
+        it("should add the download numbers to the 0.3.0 extension version and update the download total", function () {
+            repository.addDownloadDataToPackage("snippets-extension", {"0.3.0" : 5}, {"20130805": 5});
+
+            var registry = repository.getRegistry();
+            expect(registry["snippets-extension"].versions[1].downloads).toBe(5);
+            expect(registry["snippets-extension"].totalDownloads).toBe(5);
+        });
+
+        it("should add the download numbers to the 0.3.0 extension version and update the download total when called twice", function () {
+            repository.addDownloadDataToPackage("snippets-extension", {"0.3.0" : 5}, {"20130805": 5});
+            repository.addDownloadDataToPackage("snippets-extension", {"0.3.0" : 8}, {"20130805": 8});
+
+            var registry = repository.getRegistry();
+            expect(registry["snippets-extension"].versions[1].downloads).toBe(13);
+            expect(registry["snippets-extension"].totalDownloads).toBe(13);
+        });
+
+        it("should add the download numbers to the 0.2.0 and 0.3.0 extension and update the download total", function () {
+            repository.addDownloadDataToPackage("snippets-extension", {"0.3.0": 5, "0.2.0": 3}, {"20130805": 8});
+
+            var registry = repository.getRegistry();
+            expect(registry["snippets-extension"].versions[0].downloads).toBe(3);
+            expect(registry["snippets-extension"].versions[1].downloads).toBe(5);
+            expect(registry["snippets-extension"].totalDownloads).toBe(8);
+        });
     });
 
-    it("should add the download numbers to the 0.3.0 extension version and update the download total", function () {
-        repository.addDownloadDataToPackage("snippets-extension", {"0.3.0" : 5}, {"20130805": 5});
+    describe("Recent Downloads", function () {
+        var registry;
 
-        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":5,"recent":{"20130805":5}}}');
-        expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
-    });
+        beforeEach(function () {
+            var registry = JSON.parse('{"test-package":{"metadata":{"name":"test-package"}, "versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}]}}');
+            repository.__set__("registry", registry);
+        });
 
-    it("should add the download numbers to the 0.2.0 extension version and update the download total", function () {
-        repository.addDownloadDataToPackage("snippets-extension", {"0.3.0": 5, "0.2.0": 3}, {"20130805": 8});
+        it("should update the recent download numbers on new extension", function () {
+            var recentDownloads = {"20130216": 10, "20130217": 5, "20130218": 7, "20130219": 4, "20130220": 41, "20130221": 14, "20130222": 30};
 
-        var expectedRegistry = JSON.parse('{"snippets-extension":{"metadata":{"name":"snippets-extension","title":"Brackets Snippets","homepage":"https://github.com/testuser/brackets-snippets","author":{"name":"Testuser"},"version":"1.0.0","engines":{"brackets":">=0.24"},"description":"A simple brackets snippets extension."},"owner":"irichter","versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":3},{"version":"0.3.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24","downloads":5}],"totalDownloads":8, "recent":{"20130805":8}}}');
-        expect(JSON.stringify(repository.getRegistry())).toBe(JSON.stringify(expectedRegistry));
-    });
+            repository._updateRecentDownloadsForPackage("test-package", recentDownloads);
 
-    it("should update the recent download numbers", function () {
-        var registry = JSON.parse('{"test-package":{"metadata":{"name":"test-package"}, "versions":[{"version":"0.2.0","published":"2014-01-10T17:27:25.996Z","brackets":">=0.24"}], "recent": {"20131502": 15}}}');
-        repository.__set__("registry", registry);
+            var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
 
-        var recentDownloads = {"20130101": 10, "20130202": 5, "20130204": 7, "20140107": 4, "20140307": 41, "20140529": 14, "20130107": 30};
+            expect(Object.keys(updatedRecentDownload).length).toBe(7);
+            // Check that the download numbers got doubled
+            expect(updatedRecentDownload).toEqual({"20130216": 10, "20130217": 5, "20130218": 7, "20130219": 4, "20130220": 41, "20130221": 14, "20130222": 30});
+        });
 
-        repository._updateRecentDownloadsForPackage("test-package", recentDownloads);
-        var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
-        expect(Object.keys(updatedRecentDownload).length).toBe(7);
+        it("should update the recent download numbers 2 times and ensure that the sum of the downloads is correct", function () {
+            var recentDownloads = {"20130216": 10, "20130217": 5, "20130218": 7, "20130219": 4, "20130220": 41, "20130221": 14, "20130222": 30};
+            var recentDownloads2 = {"20130216": 10, "20130217": 5, "20130218": 7, "20130219": 4, "20130220": 20, "20130221": 7, "20130222": 15};
+
+            repository._updateRecentDownloadsForPackage("test-package", recentDownloads);
+            repository._updateRecentDownloadsForPackage("test-package", recentDownloads2);
+
+            var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
+
+            expect(Object.keys(updatedRecentDownload).length).toBe(7);
+            expect(updatedRecentDownload).toEqual({"20130216": 20, "20130217": 10, "20130218": 14, "20130219": 8, "20130220": 61, "20130221": 21, "20130222": 45});
+        });
+
+        it("should update the recent download numbers with 3 datapoints and keep only these 3 datapoints on new extension", function () {
+            var recentDownloads = {"20130215": 10, "20130216": 5, "20130217": 7};
+
+            repository._updateRecentDownloadsForPackage("test-package", recentDownloads);
+
+            var updatedRecentDownload = repository.getRegistry()["test-package"].recent;
+
+            expect(Object.keys(updatedRecentDownload).length).toBe(3);
+            expect(updatedRecentDownload).toEqual({"20130215": 10, "20130216": 5, "20130217": 7});
+        });
     });
 });

@@ -228,20 +228,11 @@ LogfileProcessor.prototype = {
                             var nextMarker = data.Contents[data.Contents.length - 1].Key;
                             _listObjects(bucketName, nextMarker, maxKeys);
                         } else {
-                            var key,
-                                i = data.Contents.length - 1;
-
-                            // Skip any files in subfolders
-                            while (i >= 0) {
-                                var lastLogfileObject = data.Contents[i];
-                                // Key without "/" is a file in this bucket and not in any subdirectory
-                                if (lastLogfileObject.Key.indexOf("/") === -1) {
-                                    key = lastLogfileObject.Key;
-                                    break;
-                                }
-
-                                i = i - 1;
-                            }
+                            // this will get the Key off the last data item
+                            // the log files for the registry are stored in a "subfolder"
+                            // logs. Any file that appears in this bucket will be considered,
+                            // even if it's located in a subfolder of logs
+                            var key = data.Contents[data.Contents.length - 1].Key;
 
                             Promise.settle(allPromises).then(function () {
                                 listObjectPromise.resolve(key);

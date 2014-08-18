@@ -15,6 +15,9 @@
                 <span class="muted ext-version">{{metadata.version}}</span><br/>
                 <span class="muted ext-author">by {{{authorInfo}}}</span>
                 <span class="muted ext-date">on {{lastVersionDate}}</span>
+                {{#if metadata.homepage}} 
+                  <br /><span class="muted ext-homepage"><a href = "{{metadata.homepage}}">More Info...</a></span>
+                {{/if}}
                 {{#if canAdmin}}
                     <div class="admin btn-group btn-group-xs">
                         <button type="button" class="btn btn-default changeOwner" data-name="{{metadata.name}}">

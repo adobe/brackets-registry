@@ -11,7 +11,8 @@ body {
 }
 .extension-list .ext-version,
 .extension-list .ext-date,
-.extension-list .ext-author {
+.extension-list .ext-author, 
+.extension-list .ext-homepage {
     font-size: 0.8em;
 }
 

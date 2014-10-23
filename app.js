@@ -53,6 +53,7 @@ config.storage = config.storage || "./ramstorage.js";
 config.repositoryBaseURL = config.repositoryBaseURL || "";
 config.helpURL = config.helpURL || "";
 config.admins = config.admins || [];
+config.sizeLimit = config.sizeLimit || "10mb";
 
 // Load the custom footer HTML from disk, if it's defined.
 if (config.customFooter) {
@@ -131,7 +132,7 @@ app.configure(function () {
 
     app.use(express.favicon(path.resolve(__dirname, "public/favicon.ico")));
     app.use(express.logger("dev"));
-    app.use(express.limit("5mb"));
+    app.use(express.limit(config.sizeLimit));
     app.use(express.cookieParser());
     app.use(express.bodyParser());
     app.use(express.methodOverride());

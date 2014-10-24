@@ -172,7 +172,8 @@ if (config.hostname === "localhost" && config.port) {
     https.createServer({
         key: key,
         cert: cert,
-        ca: ca
+        ca: ca,
+        secureProtocol: "TLSv1_method"
     }, app).listen(config.securePort);
     console.log("HTTPS Listening on ", config.securePort);
 

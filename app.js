@@ -37,7 +37,7 @@ var express = require("express"),
     routes = require("./lib/routes"),
     downloadData = require("./lib/downloadData"),
     logging = require("./lib/logging"),
-    _ = require("lodash");
+    _ = require("lodash"),
     constants = require("constants");
 
 // Load cert and secret configuration
@@ -174,8 +174,8 @@ if (config.hostname === "localhost" && config.port) {
         key: key,
         cert: cert,
         ca: ca,
-        secureProtocol: 'SSLv23_method',
-        secureOptions: constants.SSL_OP_NO_SSLv3
+        secureProtocol: "SSLv23_method",
+        secureOptions: constants.SSL_OP_NO_SSLv2 | constants.SSL_OP_NO_SSLv3
     }, app).listen(config.securePort);
     console.log("HTTPS Listening on ", config.securePort);
 

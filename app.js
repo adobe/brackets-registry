@@ -31,6 +31,7 @@ var express = require("express"),
     fs = require("fs"),
     http = require("http"),
     https = require("https"),
+    url = require("url"),
     passport = require("passport"),
     GitHubStrategy = require("passport-github").Strategy,
     repository = require("./lib/repository"),
@@ -38,7 +39,8 @@ var express = require("express"),
     downloadData = require("./lib/downloadData"),
     logging = require("./lib/logging"),
     _ = require("lodash"),
-    constants = require("constants");
+    constants = require("constants"),
+    request = require("request");
 
 // Load cert and secret configuration
 var config = JSON.parse(fs.readFileSync(path.resolve(__dirname, "config/config.json"))),
@@ -119,7 +121,38 @@ passport.use(
             callbackURL: callbackScheme + config.hostname + ":" + callbackPort + "/auth/github/callback"
         },
         function (accessToken, refreshToken, profile, done) {
-            done(null, "github:" + profile.username);
+            request({
+                method: 'GET',
+                uri: url.parse(profile._json.organizations_url),
+                qs: {
+                    access_token: accessToken
+                },
+                headers: {
+                    "User-Agent": "brackets-registry"
+                },
+                json: true,
+            }, function (error, response, body) {
+                if (error) {
+                    return done(error);
+                }
+
+                // body must be an array, if not it is an error.
+                if (!Array.isArray(body)) {
+                    return done(body);
+                }
+
+                var orgs = body.map(function (item) {
+                    return {
+                        login: "github:" + item.login,
+                        id: item.id
+                    };
+                });
+                var user = {
+                    owner: "github:" + profile.username,
+                    orgs: orgs
+                };
+                done(null, user);
+            });
         }
     )
 );

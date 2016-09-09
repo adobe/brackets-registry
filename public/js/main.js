@@ -89,7 +89,7 @@ $(function () {
     $("body").on("click", "button.changeOwner", function (event) {
         var $target = $(event.target),
             name = $target.data("name");
-        bootbox.prompt("Enter the GitHub username of the new owner for " + name, function (newOwner) {
+        bootbox.prompt("Enter the GitHub username / organization of the new owner for " + name, function (newOwner) {
             if (newOwner === null) {
                 return;
             }
@@ -97,7 +97,7 @@ $(function () {
                 displayStatus("info", "No new owner provided. No action taken.");
                 return;
             }
-                
+
             $.ajax("/package/" + name + "/changeOwner", {
                 type: "POST",
                 data: {

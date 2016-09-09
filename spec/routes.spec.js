@@ -29,6 +29,7 @@
 var rewire         = require("rewire"),
     routes         = rewire("../lib/routes"),
     registry_utils = require("../lib/registry_utils"),
+    user_utils     = require("../lib/user_utils"),
     fs             = require("fs"),
     path           = require("path");
 
@@ -47,7 +48,8 @@ var _index              = routes.__get__("_index"),
     _rss                = routes.__get__("_rss"),
     lastVersionDate     = registry_utils.lastVersionDate,
     formatUserId        = registry_utils.formatUserId,
-    ownerLink           = registry_utils.ownerLink;
+    ownerLink           = registry_utils.ownerLink,
+    createFakeUser      = user_utils._createFakeUser;
 
 // Don't map the keys to human-readable strings.
 routes.__set__("_mapError", function (key) { return key; });
@@ -169,7 +171,7 @@ describe("routes", function () {
 
         req = createReq();
         uploadReq = createReq();
-        uploadReq.user = "github:someuser";
+        uploadReq.user = createFakeUser("github:someuser");
         uploadReq.files = {
             extensionPackage: {
                 path: "/tmp/s0m3g4rb4g3n4m3",
@@ -219,7 +221,7 @@ describe("routes", function () {
     });
 
     it("should render and inject correct data into the home page when user is authenticated", function () {
-        req.user = "github:someuser";
+        req.user = createFakeUser("github:someuser");
         _index(req, res);
         expect(res.render).toHaveBeenCalled();
         var args = res.render.mostRecentCall.args;
@@ -231,7 +233,7 @@ describe("routes", function () {
     });
 
     it("should render and inject correct data into the home page when admin user is authenticated", function () {
-        req.user = "github:admin";
+        req.user = createFakeUser("github:admin");
         _index(req, res);
         expect(res.render).toHaveBeenCalled();
         var args = res.render.mostRecentCall.args;
@@ -286,7 +288,7 @@ describe("routes", function () {
         _upload(uploadReq, res);
         expect(mockRepository.addPackage).toHaveBeenCalled();
         expect(mockRepository.addPackage.mostRecentCall.args[0]).toBe("/tmp/s0m3g4rb4g3n4m3");
-        expect(mockRepository.addPackage.mostRecentCall.args[1]).toBe("github:someuser");
+        expect(mockRepository.addPackage.mostRecentCall.args[1].owner).toBe("github:someuser");
     });
 
     it("should render upload success page with entry data if upload succeeded", function () {
@@ -442,7 +444,7 @@ describe("routes", function () {
         });
 
         it("should return 404 and render failure page if attempting to delete without giving package name", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             _delete(req, res);
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.render).toHaveBeenCalled();
@@ -451,7 +453,7 @@ describe("routes", function () {
         });
 
         it("should return 404 and render failure page if attempting to delete unknown package", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "nonexistent-package"
             };
@@ -466,7 +468,7 @@ describe("routes", function () {
         });
 
         it("should return 401 and render failure page if attempting to delete a package without being authorized", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "not-my-package"
             };
@@ -481,7 +483,7 @@ describe("routes", function () {
         });
 
         it("should return 200 and render success page after deleting package", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "good-package"
             };
@@ -506,7 +508,7 @@ describe("routes", function () {
         });
 
         it("should return 404 and render failure page if attempting to changeOwner without giving package name", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             _changeOwner(req, res);
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.render).toHaveBeenCalled();
@@ -515,7 +517,7 @@ describe("routes", function () {
         });
 
         it("should return 404 and render failure page if attempting to changeOwner unknown package", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "nonexistent-package"
             };
@@ -533,7 +535,7 @@ describe("routes", function () {
         });
 
         it("should return 401 and render failure page if attempting to changeOwner a package without being authorized", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "not-my-package"
             };
@@ -551,7 +553,7 @@ describe("routes", function () {
         });
 
         it("should return 400 and render failure page if attempting to changeOwner a package without specifying a new owner", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "good-package"
             };
@@ -564,7 +566,7 @@ describe("routes", function () {
         });
 
         it("should return 200 and render success page after changing a package owner", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "good-package"
             };
@@ -583,7 +585,7 @@ describe("routes", function () {
         });
 
         it("should automatically add github: to new owner's username", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "good-package"
             };
@@ -612,7 +614,7 @@ describe("routes", function () {
         });
 
         it("should return 404 and render failure page if attempting to changeRequirements without giving package name", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             _changeRequirements(req, res);
             expect(res.status).toHaveBeenCalledWith(404);
             expect(res.render).toHaveBeenCalled();
@@ -621,7 +623,7 @@ describe("routes", function () {
         });
 
         it("should return 404 and render failure page if attempting to changeRequirements unknown package", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "nonexistent-package"
             };
@@ -639,7 +641,7 @@ describe("routes", function () {
         });
 
         it("should return 401 and render failure page if attempting to changeRequirements a package without being authorized", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "not-my-package"
             };
@@ -657,7 +659,7 @@ describe("routes", function () {
         });
 
         it("should return 400 and render failure page if attempting to changeRequirements a package without specifying new requirements", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "good-package"
             };
@@ -670,7 +672,7 @@ describe("routes", function () {
         });
 
         it("should return 200 and render success page after changing package requirements", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "good-package"
             };
@@ -689,7 +691,7 @@ describe("routes", function () {
         });
 
         it("should return 400 for invalid new requirements", function () {
-            req.user = "github:someuser";
+            req.user = createFakeUser("github:someuser");
             req.params = {
                 name: "good-package"
             };
@@ -715,7 +717,7 @@ describe("route utilities", function () {
                 name: "my-extension",
                 version: "1.0.0"
             },
-            owner: "github:someuser"
+            user: createFakeUser("github:someuser")
         };
     });
 

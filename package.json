@@ -7,8 +7,9 @@
   "scripts": {
     "preinstall": "npm install deps/*",
     "start": "node app",
-    "test": "istanbul test node_modules/jasmine-node/bin/jasmine-node spec",
-    "jslint": "./node_modules/.bin/jslint ./downloadStats/*.js ./spec/*.js ./lib/*.js"
+    "lint": "eslint ./downloadStats/*.js ./spec/*.js ./lib/*.js ./public/js/main.js",
+    "pretest": "npm run lint",
+    "test": "istanbul test node_modules/jasmine-node/bin/jasmine-node spec"
   },
   "issues": {
     "url": "http://github.com/adobe/brackets-registry/issues"
@@ -39,10 +40,10 @@
     "commander": "~2.1.0"
   },
   "devDependencies": {
+    "eslint": "~2.13.1",
     "fs-extra": "~0.30.0",
     "istanbul": "~0.4.5",
     "jasmine-node": "~1.14.5",
-    "jslint": "~0.5.0",
     "rewire": "~2.5.2"
   }
 }

@@ -30,6 +30,7 @@ indent: 4, maxerr: 50 */
 
 var rewire     = require("rewire"),
     repository = rewire("../lib/repository"),
+    user_utils = rewire("../lib/user_utils"),
     path       = require("path");
 
 var testPackageDirectory = path.join(path.dirname(module.filename), "data"),
@@ -57,25 +58,27 @@ describe("Repository", function () {
         });
     }
 
-    var username = "github:reallyreallyfakeuser";
+    var createFakeUser = user_utils._createFakeUser;
+    var adminLogged = createFakeUser(ADMIN);
+    var user = createFakeUser("github:reallyreallyfakeuser");
 
     it("should fail with no configuration", function (done) {
         repository.__set__("config", null);
-        repository.addPackage(basicValidExtension, "github:adobe", function (err, entry) {
+        repository.addPackage(basicValidExtension, createFakeUser("github:adobe"), function (err, entry) {
             expect(err.message).toEqual("Repository not configured!");
             done();
         });
     });
 
     it("should be able to add a valid package", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             expect(err).toEqual(null);
             expect(entry.metadata.name).toEqual("basic-valid-extension");
 
             var registered = repository.__get__("registry")["basic-valid-extension"];
             expect(registered).toBeDefined();
             expect(registered.metadata.name).toEqual("basic-valid-extension");
-            expect(registered.owner).toEqual(username);
+            expect(registered.owner).toEqual(user.owner);
             expect(registered.versions.length).toEqual(1);
             expect(registered.versions[0].version).toEqual("1.0.0");
 
@@ -99,8 +102,8 @@ describe("Repository", function () {
     });
 
     it("should verify ownership before allowing action for a package", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
-            repository.addPackage(basicValidExtension, "github:someonewhowedontknowandshouldnthaveaccess", function (err, metadata) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
+            repository.addPackage(basicValidExtension, createFakeUser("github:someonewhowedontknowandshouldnthaveaccess"), function (err, metadata) {
                 expect(err.message).toEqual("NOT_AUTHORIZED");
                 done();
             });
@@ -115,14 +118,14 @@ describe("Repository", function () {
             }
         });
 
-        repository.addPackage("nopackage.zip", username, function (err, entry) {
+        repository.addPackage("nopackage.zip", user, function (err, entry) {
             expect(err).toBeNull();
             done();
         });
     });
 
     it("should handle good version upgrades", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             setValidationResult({
                 metadata: {
                     name: "basic-valid-extension",
@@ -134,7 +137,7 @@ describe("Repository", function () {
                 }
             });
 
-            repository.addPackage("nopackage.zip", username, function (err, entry) {
+            repository.addPackage("nopackage.zip", user, function (err, entry) {
                 expect(entry.metadata.description).toEqual("Less basic than before");
                 expect(entry.metadata.version).toEqual("2.0.0");
                 expect(entry.versions.length).toEqual(2);
@@ -155,7 +158,7 @@ describe("Repository", function () {
     });
 
     it("should reject versions that are not higher than the previous version", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             setValidationResult({
                 metadata: {
                     name: "basic-valid-extension",
@@ -163,7 +166,7 @@ describe("Repository", function () {
                 }
             });
 
-            repository.addPackage("nopackage.zip", username, function (err, entry) {
+            repository.addPackage("nopackage.zip", user, function (err, entry) {
                 expect(err.message).toEqual("BAD_VERSION");
                 done();
             });
@@ -182,7 +185,7 @@ describe("Repository", function () {
             }
         });
 
-        repository.addPackage("nopackage.zip", username, function (err, entry) {
+        repository.addPackage("nopackage.zip", user, function (err, entry) {
             expect(err).not.toBeNull();
             expect(err.message).toEqual("VALIDATION_FAILED");
             expect(err.errors.length).toEqual(2);
@@ -194,7 +197,7 @@ describe("Repository", function () {
 
     it("should return an error if the registry is not loaded", function (done) {
         repository.__set__("registry", null);
-        repository.addPackage("nopackage.zip", username, function (err, entry) {
+        repository.addPackage("nopackage.zip", user, function (err, entry) {
             expect(err.message).toEqual("REGISTRY_NOT_LOADED");
             done();
         });
@@ -216,7 +219,7 @@ describe("Repository", function () {
         storage.savePackage = function (entry, path, callback) {
             callback(expectedError);
         };
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             expect(err).toBe(expectedError);
             var registry = repository.__get__("registry");
             expect(registry["basic-valid-extension"]).toBeUndefined();
@@ -225,7 +228,7 @@ describe("Repository", function () {
     });
 
     it("should not update the registry if there's a storage error", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             setValidationResult({
                 metadata: {
                     name: "basic-valid-extension",
@@ -243,7 +246,7 @@ describe("Repository", function () {
                 callback(expectedError);
             };
 
-            repository.addPackage("nopackage.zip", username, function (err, entry) {
+            repository.addPackage("nopackage.zip", user, function (err, entry) {
                 expect(err).toBe(expectedError);
                 var registry = repository.__get__("registry");
                 expect(registry["basic-valid-extension"].versions.length).toEqual(1);
@@ -260,7 +263,7 @@ describe("Repository", function () {
             }
         });
 
-        repository.addPackage("nopackage.zip", username, function (err, entry) {
+        repository.addPackage("nopackage.zip", user, function (err, entry) {
             expect(err).toBeNull();
 
             setValidationResult({
@@ -271,7 +274,7 @@ describe("Repository", function () {
                     version: "1.0.0"
                 }
             });
-            repository.addPackage("nopackage.zip", username, function (err, entry) {
+            repository.addPackage("nopackage.zip", user, function (err, entry) {
                 expect(err).toBeNull();
                 setValidationResult({
                     metadata: {
@@ -282,7 +285,7 @@ describe("Repository", function () {
                     }
                 });
 
-                repository.addPackage("nopackage.zip", username, function (err, entry) {
+                repository.addPackage("nopackage.zip", user, function (err, entry) {
                     expect(err).not.toBeNull();
                     expect(err.message).toEqual("VALIDATION_FAILED");
                     expect(err.errors.length).toEqual(1);
@@ -295,10 +298,10 @@ describe("Repository", function () {
     });
 
     it("should delete a package when requested by the owner", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             var registry = repository.__get__("registry");
             expect(registry["basic-valid-extension"]).toBeDefined();
-            repository.deletePackageMetadata("basic-valid-extension", username, function (err) {
+            repository.deletePackageMetadata("basic-valid-extension", user, function (err) {
                 expect(err).toBeNull();
                 expect(registry["basic-valid-extension"]).toBeUndefined();
                 done();
@@ -307,15 +310,15 @@ describe("Repository", function () {
     });
 
     it("should produce an error for unknown package", function (done) {
-        repository.deletePackageMetadata("does-not-exist", username, function (err) {
+        repository.deletePackageMetadata("does-not-exist", user, function (err) {
             expect(err).not.toBeNull();
             done();
         });
     });
 
     it("should not delete a package when requested by a non-owner", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
-            repository.deletePackageMetadata("basic-valid-extension", "github:unknown", function (err) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
+            repository.deletePackageMetadata("basic-valid-extension", createFakeUser("github:unknown"), function (err) {
                 var registry = repository.__get__("registry");
                 expect(err).not.toBeNull();
                 expect(registry["basic-valid-extension"]).toBeDefined();
@@ -325,10 +328,10 @@ describe("Repository", function () {
     });
 
     it("should delete a package when requested by an admin", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             var registry = repository.__get__("registry");
             expect(registry["basic-valid-extension"]).toBeDefined();
-            repository.deletePackageMetadata("basic-valid-extension", ADMIN, function (err) {
+            repository.deletePackageMetadata("basic-valid-extension", adminLogged, function (err) {
                 expect(err).toBeNull();
                 expect(registry["basic-valid-extension"]).toBeUndefined();
                 done();
@@ -337,10 +340,10 @@ describe("Repository", function () {
     });
 
     it("should change a package's owner when requested by the owner", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             var registry = repository.__get__("registry");
             expect(registry["basic-valid-extension"]).toBeDefined();
-            repository.changePackageOwner("basic-valid-extension", username, "github:newuser", function (err) {
+            repository.changePackageOwner("basic-valid-extension", user, "github:newuser", function (err) {
                 expect(err).toBeNull();
                 expect(registry["basic-valid-extension"].owner).toEqual("github:newuser");
                 done();
@@ -349,15 +352,15 @@ describe("Repository", function () {
     });
 
     it("should produce an error for unknown package when changing ownership", function (done) {
-        repository.changePackageOwner("does-not-exist", username, function (err) {
+        repository.changePackageOwner("does-not-exist", user, function (err) {
             expect(err).not.toBeNull();
             done();
         });
     });
 
     it("should not change ownership for a package when requested by a non-owner", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
-            repository.changePackageOwner("basic-valid-extension", "github:unknown", "github:badguy", function (err) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
+            repository.changePackageOwner("basic-valid-extension", createFakeUser("github:unknown"), "github:badguy", function (err) {
                 var registry = repository.__get__("registry");
                 expect(err).not.toBeNull();
                 expect(registry["basic-valid-extension"].owner).toEqual("github:reallyreallyfakeuser");
@@ -367,9 +370,9 @@ describe("Repository", function () {
     });
 
     it("should change ownership of a package when requested by an admin", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             var registry = repository.__get__("registry");
-            repository.changePackageOwner("basic-valid-extension", ADMIN, "github:someuser", function (err) {
+            repository.changePackageOwner("basic-valid-extension", adminLogged, "github:someuser", function (err) {
                 expect(err).toBeNull();
                 expect(registry["basic-valid-extension"].owner).toEqual("github:someuser");
                 done();
@@ -378,9 +381,9 @@ describe("Repository", function () {
     });
 
     it("should change a package's requirements when requested by the owner", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             var registry = repository.__get__("registry");
-            repository.changePackageRequirements("basic-valid-extension", username, "<0.38.0", function (err) {
+            repository.changePackageRequirements("basic-valid-extension", user, "<0.38.0", function (err) {
                 expect(err).toBeNull();
                 registry["basic-valid-extension"].versions.forEach(function (version) {
                     expect(version.brackets).toEqual("<0.38.0");
@@ -391,15 +394,15 @@ describe("Repository", function () {
     });
 
     it("should produce an error for unknown package when changing requrements", function (done) {
-        repository.changePackageRequirements("does-not-exist", username, "<0.38.0", function (err) {
+        repository.changePackageRequirements("does-not-exist", user, "<0.38.0", function (err) {
             expect(err).not.toBeNull();
             done();
         });
     });
 
     it("should not change requirements for a package when requested by a non-owner", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
-            repository.changePackageRequirements("basic-valid-extension", "github:unknown", "<0.38.0", function (err) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
+            repository.changePackageRequirements("basic-valid-extension", createFakeUser("github:unknown"), "<0.38.0", function (err) {
                 var registry = repository.__get__("registry");
                 expect(err).not.toBeNull();
                 expect(registry["basic-valid-extension"].versions[0].brackets).toBeUndefined();
@@ -409,9 +412,9 @@ describe("Repository", function () {
     });
 
     it("should change requirements of a package when requested by an admin", function (done) {
-        repository.addPackage(basicValidExtension, username, function (err, entry) {
+        repository.addPackage(basicValidExtension, user, function (err, entry) {
             var registry = repository.__get__("registry");
-            repository.changePackageRequirements("basic-valid-extension", ADMIN, "<0.38.0", function (err) {
+            repository.changePackageRequirements("basic-valid-extension", adminLogged, "<0.38.0", function (err) {
                 expect(err).toBeNull();
                 expect(registry["basic-valid-extension"].versions[0].brackets).toEqual("<0.38.0");
                 done();

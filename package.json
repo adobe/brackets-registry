@@ -34,7 +34,7 @@
     "filequeue": "~0.5.0",
     "bluebird": "~1.2.4",
     "lodash": "~2.4.1",
-    "request": "~2.31.0",
+    "request": "^2.74.0",
     "request-json": "~0.4.6",
     "temporary": "~0.0.8",
     "commander": "~2.1.0"

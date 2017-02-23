@@ -111,11 +111,9 @@ describe("S3 Storage", function () {
                 callback(null, result);
             };
             
-            AWS.S3 = {
-                Client: function (options) {
-                    expect(options.sslEnabled).toEqual(true);
-                    this.getObject = getObject;
-                }
+            AWS.S3 = function (options) {
+                expect(options.sslEnabled).toEqual(true);
+                this.getObject = getObject;
             };
             
             storage.getRegistry(function (err, registry) {
@@ -135,10 +133,8 @@ describe("S3 Storage", function () {
             });
         };
         
-        AWS.S3 = {
-            Client: function (options) {
-                this.getObject = getObject;
-            }
+        AWS.S3 = function (options) {
+            this.getObject = getObject;
         };
         
         var logging = s3storage.__get__("logging");
@@ -158,29 +154,26 @@ describe("S3 Storage", function () {
 
         var requestNumber = 1;
 
-        AWS.S3 = {
-            Client: function (options) {
-                this.putObject = function (params, callback) {
-                    if (requestNumber === 1) {
-                        requestNumber++;
+        AWS.S3 = function (options) {
+            this.putObject = function (params, callback) {
+                if (requestNumber === 1) {
+                    requestNumber++;
+                    expect(params).toEqual({
+                        Bucket: "repository.brackets.io",
+                        Key: "registry.json",
+                        ACL: "public-read",
+                        ContentEncoding: "gzip",
+                        ContentType: "application/json",
+                        Body: jasmine.any(Buffer)
+                    });
 
-                        expect(params).toEqual({
-                            Bucket: "repository.brackets.io",
-                            Key: "registry.json",
-                            ACL: "public-read",
-                            ContentEncoding: "gzip",
-                            ContentType: "application/json",
-                            Body: jasmine.any(Buffer)
-                        });
-
-                        zlib.gunzip(params.Body, function (err, uncompressed) {
-                            var registry = JSON.parse(uncompressed.toString());
-                            expect(registry).toEqual(sampleRegistry);
-                            done();
-                        });
-                    }
-                };
-            }
+                    zlib.gunzip(params.Body, function (err, uncompressed) {
+                        var registry = JSON.parse(uncompressed.toString());
+                        expect(registry).toEqual(sampleRegistry);
+                        done();
+                    });
+                }
+            };
         };
         
         storage.saveRegistry(sampleRegistry);
@@ -191,42 +184,40 @@ describe("S3 Storage", function () {
 
         var requestNumber = 1;
 
-        AWS.S3 = {
-            Client: function (options) {
-                this.putObject = function (params, callback) {
-                    if (requestNumber === 1) {
-                        requestNumber++;
-                        expect(params).toEqual({
-                            Bucket: "repository.brackets.io",
-                            Key: "registry.json",
-                            ACL: "public-read",
-                            ContentEncoding: "gzip",
-                            ContentType: "application/json",
-                            Body: jasmine.any(Buffer)
-                        });
+        AWS.S3 = function (options) {
+            this.putObject = function (params, callback) {
+                if (requestNumber === 1) {
+                    requestNumber++;
+                    expect(params).toEqual({
+                        Bucket: "repository.brackets.io",
+                        Key: "registry.json",
+                        ACL: "public-read",
+                        ContentEncoding: "gzip",
+                        ContentType: "application/json",
+                        Body: jasmine.any(Buffer)
+                    });
 
-                        callback(null, {});
-                    } else {
-                        expect(params.Key.indexOf("registry_backups/registry")).toBe(0);
-                        expect(params).toEqual({
-                            Key: params.Key,
-                            Bucket: "repository.brackets.io",
-                            ACL: "public-read",
-                            ContentEncoding: "gzip",
-                            ContentType: "application/json",
-                            Body: jasmine.any(Buffer)
-                        });
+                    callback(null, {});
+                } else {
+                    expect(params.Key.indexOf("registry_backups/registry")).toBe(0);
+                    expect(params).toEqual({
+                        Key: params.Key,
+                        Bucket: "repository.brackets.io",
+                        ACL: "public-read",
+                        ContentEncoding: "gzip",
+                        ContentType: "application/json",
+                        Body: jasmine.any(Buffer)
+                    });
 
-                        callback(null, {});
+                    callback(null, {});
 
-                        zlib.gunzip(params.Body, function (err, uncompressed) {
-                            var registry = JSON.parse(uncompressed.toString());
-                            expect(registry).toEqual(sampleRegistry);
-                            done();
-                        });
-                    }
-                };
-            }
+                    zlib.gunzip(params.Body, function (err, uncompressed) {
+                        var registry = JSON.parse(uncompressed.toString());
+                        expect(registry).toEqual(sampleRegistry);
+                        done();
+                    });
+                }
+            };
         };
 
         storage.saveRegistry(sampleRegistry);
@@ -237,36 +228,34 @@ describe("S3 Storage", function () {
         
         var requestNumber = 1;
 
-        AWS.S3 = {
-            Client: function (options) {
-                this.putObject = function (params, callback) {
-                    if (requestNumber === 1) {
-                        requestNumber++;
-                        expect(params).toEqual({
-                            Bucket: "repository.brackets.io",
-                            Key: "registry.json",
-                            ACL: "public-read",
-                            ContentEncoding: "gzip",
-                            ContentType: "application/json",
-                            Body: jasmine.any(Buffer)
-                        });
+        AWS.S3 = function (options) {
+            this.putObject = function (params, callback) {
+                if (requestNumber === 1) {
+                    requestNumber++;
+                    expect(params).toEqual({
+                        Bucket: "repository.brackets.io",
+                        Key: "registry.json",
+                        ACL: "public-read",
+                        ContentEncoding: "gzip",
+                        ContentType: "application/json",
+                        Body: jasmine.any(Buffer)
+                    });
 
-                        callback(null, {});
-                    } else {
-                        expect(params.Key.startsWith("registry_backups/registry")).not.toBe(-1);
-                        expect(params).toEqual({
-                            Bucket: "repository.brackets.io",
-                            ACL: "public-read",
-                            ContentEncoding: "gzip",
-                            ContentType: "application/json",
-                            Body: jasmine.any(Buffer)
-                        });
+                    callback(null, {});
+                } else {
+                    expect(params.Key.startsWith("registry_backups/registry")).not.toBe(-1);
+                    expect(params).toEqual({
+                        Bucket: "repository.brackets.io",
+                        ACL: "public-read",
+                        ContentEncoding: "gzip",
+                        ContentType: "application/json",
+                        Body: jasmine.any(Buffer)
+                    });
 
-                        callback("Couldn't access S3", {});
-                        done();
-                    }
-                };
-            }
+                    callback("Couldn't access S3", {});
+                    done();
+                }
+            };
         };
 
         storage.saveRegistry(sampleRegistry);
@@ -302,10 +291,8 @@ describe("S3 Storage", function () {
             }
         };
         
-        AWS.S3 = {
-            Client: function (options) {
-                this.putObject = putObject;
-            }
+        AWS.S3 = function (options) {
+            this.putObject = putObject;
         };
         
         storage.saveRegistry(sampleRegistry);
@@ -314,19 +301,17 @@ describe("S3 Storage", function () {
     it("should save packages to S3", function (done) {
         var storage = new s3storage.Storage(config);
         
-        AWS.S3 = {
-            Client: function (options) {
-                this.putObject = function (params, callback) {
-                    expect(params).toEqual({
-                        Bucket: "repository.brackets.io",
-                        Key: "basic-valid-extension/basic-valid-extension-1.0.0.zip",
-                        ACL: "public-read",
-                        ContentType: "application/zip",
-                        Body: jasmine.any(stream.Stream)
-                    });
-                    callback(null);
-                };
-            }
+        AWS.S3 = function (options) {
+            this.putObject = function (params, callback) {
+                expect(params).toEqual({
+                    Bucket: "repository.brackets.io",
+                    Key: "basic-valid-extension/basic-valid-extension-1.0.0.zip",
+                    ACL: "public-read",
+                    ContentType: "application/zip",
+                    Body: jasmine.any(stream.Stream)
+                });
+                callback(null);
+            };
         };
         
         storage.savePackage({

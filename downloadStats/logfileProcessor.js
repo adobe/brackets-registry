@@ -94,7 +94,7 @@ LogfileProcessor.prototype = {
     setLastProcessedKey: function (lastAccessedKey) {
         var self = this;
 
-        var s3 = new AWS.S3.Client({
+        var s3 = new AWS.S3({
             sslEnabled: true
         });
 
@@ -126,7 +126,7 @@ LogfileProcessor.prototype = {
     getLastProcessedKey: function () {
         var self = this;
 
-        var s3 = new AWS.S3.Client({
+        var s3 = new AWS.S3({
             sslEnabled: true
         });
 
@@ -160,7 +160,7 @@ LogfileProcessor.prototype = {
     _downloadLogfiles: function (tempFolderName, lastProcessedKey) {
         var self = this;
 
-        var s3 = new AWS.S3.Client({
+        var s3 = new AWS.S3({
             sslEnabled: true
         });
 

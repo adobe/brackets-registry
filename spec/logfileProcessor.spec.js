@@ -103,9 +103,7 @@ describe("LogfileProcessor", function () {
                 config: {
                     update: jasmine.createSpy()
                 },
-                S3: {
-                    Client: function (arg) { return S3; }
-                }
+                S3: function () { return S3; }
             };
 
             logfileProcessor.__set__("AWS", AWS);
@@ -158,9 +156,7 @@ describe("LogfileProcessor", function () {
                 config: {
                     update: jasmine.createSpy()
                 },
-                S3: {
-                    Client: function (arg) { return s3; }
-                }
+                S3: function () { return s3; }
             };
             
             return AWS;

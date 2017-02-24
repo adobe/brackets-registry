@@ -139,7 +139,7 @@ function updateExtensionDownloadData(datafile, progress) {
 
     // posting works only from localhost
     var url = protocol + "://localhost:" + httpPort,
-        client = request.newClient(url);
+        client = request.createClient(url);
 
     client.sendFile("/stats", path.resolve(datafile), null, function (err, res, body) {
         if (err) {

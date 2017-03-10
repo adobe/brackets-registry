@@ -1,7 +1,7 @@
 {
   "name": "brackets-registry",
   "description": "node.js-powered server for registering Brackets extensions.",
-  "version": "0.45.0",
+  "version": "1.2.0",
   "homepage": "http://brackets.io",
   "license": "MIT",
   "scripts": {

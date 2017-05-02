@@ -36,7 +36,8 @@
     "request": "^2.74.0",
     "request-json": "~0.6.1",
     "temporary": "~0.0.8",
-    "commander": "~2.1.0"
+    "commander": "~2.1.0",
+    "npm": "~3.10.10"
   },
   "devDependencies": {
     "eslint": "~2.13.1",

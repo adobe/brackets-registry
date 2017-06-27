@@ -154,6 +154,20 @@ function updateExtensionDownloadData(datafile, progress) {
     return deferred.promise;
 }
 
+function deleteFolderRecursive(path) {
+    if (fs.existsSync(path)) {
+        fs.readdirSync(path).forEach(function (file, index) {
+            var curPath = path + "/" + file;
+            if (fs.lstatSync(curPath).isDirectory()) { // recurse
+                deleteFolderRecursive(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+}
+
 function doItAll(progress) {
     downloadLogFiles(progress).then(function () {
         extractExtensionDownloadData(progress).then(function (downloadStats) {
@@ -163,7 +177,7 @@ function doItAll(progress) {
                 fs.unlinkSync(datafilePath());
 
                 if (!config["debug.keepTempFolder"]) {
-                    fs.rmdirSync(tempFolder);
+                    deleteFolderRecursive(tempFolder);
                 }
             });
         });

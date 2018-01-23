@@ -1,4 +1,4 @@
-/*global Dropzone, $*/
+/*global Dropzone, $, document, window, URL*/
 
 $(function () {
     "use strict";
@@ -140,7 +140,6 @@ $(function () {
             message: "Enter the GitHub username / organization of the new owner for " + name,
             onOk: function () {
                 var newOwner = $("#modalInput").val();
-                console.log(newOwner);
                 $('#customModal').foundation('reveal', 'close');
                 if (newOwner === null) {
                     return;
@@ -178,7 +177,6 @@ $(function () {
             placeholder: existing,
             onOk: function (requirements) {
                 var requirements = $("#modalInput").val();
-                console.log(requirements);
                 $('#customModal').foundation('reveal', 'close');
                 if (requirements === null) {
                     return;

@@ -1,7 +1,42 @@
-/*global Dropzone, $, bootbox */
+/*global Dropzone, $*/
 
 $(function () {
     "use strict";
+
+    function revealFactory(options) {
+        $('#customModal').remove();
+
+        var $modalTemplate = $('<div id="customModal" class="reveal-modal" data-reveal aria-labelledby="modalHeader" aria-hidden="true" role="dialog"><h3 id="modalHeader"></h3><div id="modalBody"><p id="modalMessage"></p></div><div id="modalButtons" class="right"><button id="modalOk">Ok</button><button id="modalCancel">Cancel</button></div><a class="close-reveal-modal" aria-label="Close">&#215;</a></div>');
+
+        var $inputTemplate = $('<input id="modalInput" type="text">'),
+            dismissFunction = function () {
+                $('#customModal').foundation('reveal', 'close');
+            };
+
+        if (options["prompt"]) {
+            if (options["placeholder"]) {
+                $inputTemplate.val(options["placeholder"]);
+            }
+            $modalTemplate.find("#modalBody").append($inputTemplate);
+        }
+
+        $modalTemplate.find("#modalHeader").text(options["title"]);
+        $modalTemplate.find("#modalMessage").text(options["message"]);
+        $modalTemplate.find("#modalOk").click(options["onOk"]);
+        $modalTemplate.find("#modalCancel").click(options["onCancel"] || dismissFunction);
+
+        $modalTemplate.appendTo($('body'));
+        $modalTemplate.foundation('reveal').foundation('reveal', 'open');
+    }
+
+    var revealDialog = {
+        prompt: function (options) {
+            options["prompt"] = true;
+            revealFactory(options);
+        },
+        confirm: revealFactory
+    };
+
 
     Dropzone.options.uploadForm = {
         paramName: "extensionPackage",
@@ -35,7 +70,7 @@ $(function () {
                     msg += " added to registry.";
                 }
                 file.previewTemplate.querySelector(".success-message").innerHTML = msg;
-                $.ajax("/registryList", { datatype: "html" })
+                $.ajax("/user-extensions")
                     .done(function (content) {
                         $(".extension-list").html(content);
                     });
@@ -54,63 +89,81 @@ $(function () {
     };
 
     function displayStatus(type, message) {
-        var $alert = $("<div>"),
-            $button = $("<button>");
-        $alert.addClass("alert").addClass("alert-" + type).addClass("alert-dismissable");
-        $button.addClass("close").attr("data-dismiss", "alert").html("&times;");
-        $alert.append($button);
-        $("<div>").appendTo($alert).html(message);
-        $("#alertspace").append($alert);
+        var $alert = $('<div data-alert class="alert-box radius"></div>'),
+            $close = $('<a href="#" class="close">&times;</a>');
+        
+        message = $('<div>').html(message);
+        
+        $alert.addClass(type);
+        $alert.text($(message).text());;
+        $alert.append($close);
+        
+        $("#custom-alert").append($alert);
+        $(document).foundation();
     }
-    
+
     function displayErrorResult(errorResult) {
-        displayStatus("danger", errorResult.responseText);
+        displayStatus("alert", errorResult.responseText);
     }
 
     $("body").on("click", "button.delete", function (event) {
         var $target = $(event.target),
             name = $target.data("name");
-        bootbox.confirm("Really delete " + name + "?", function (result) {
-            if (!result) {
-                return;
+
+        revealDialog.confirm({
+            title: "Delete",
+            message: "Really delete " + name + "?",
+            onOk: function () {
+                $('#customModal').foundation('reveal', 'close');
+                $.ajax("/package/" + name, {
+                    type: "DELETE",
+                    data: {
+                        "_csrf": $("meta[name='csrf-token']").attr("content")
+                    }
+                }).then(function (result) {
+                    displayStatus("success", name + " successfully deleted");
+                    $.ajax("/user-extensions")
+                    .done(function (content) {
+                        $(".extension-list").html(content);
+                    });
+                }, displayErrorResult);
             }
-            $.ajax("/package/" + name, {
-                type: "DELETE",
-                data: {
-                    "_csrf": $("meta[name='csrf-token']").attr("content")
-                }
-            }).then(function (result) {
-                displayStatus("success", name + " successfully deleted");
-                $target.parents("tr").remove();
-            }, displayErrorResult);
         });
     });
 
     $("body").on("click", "button.changeOwner", function (event) {
         var $target = $(event.target),
             name = $target.data("name");
-        bootbox.prompt("Enter the GitHub username / organization of the new owner for " + name, function (newOwner) {
-            if (newOwner === null) {
-                return;
-            }
-            if (!newOwner) {
-                displayStatus("info", "No new owner provided. No action taken.");
-                return;
-            }
 
-            $.ajax("/package/" + name + "/changeOwner", {
-                type: "POST",
-                data: {
-                    "_csrf": $("meta[name='csrf-token']").attr("content"),
-                    newOwner: newOwner
+        revealDialog.prompt({
+            title: "Change Owner",
+            message: "Enter the GitHub username / organization of the new owner for " + name,
+            onOk: function () {
+                var newOwner = $("#modalInput").val();
+                console.log(newOwner);
+                $('#customModal').foundation('reveal', 'close');
+                if (newOwner === null) {
+                    return;
                 }
-            }).then(function (result) {
-                displayStatus("success", name + " owner changed to " + newOwner);
-                $.ajax("/registryList", { datatype: "html" })
+                if (!newOwner) {
+                    displayStatus("info", "No new owner provided. No action taken.");
+                    return;
+                }
+
+                $.ajax("/package/" + name + "/changeOwner", {
+                    type: "POST",
+                    data: {
+                        "_csrf": $("meta[name='csrf-token']").attr("content"),
+                        newOwner: newOwner
+                    }
+                }).then(function (result) {
+                    displayStatus("success", name + " owner changed to " + newOwner);
+                    $.ajax("/user-extensions")
                     .done(function (content) {
                         $(".extension-list").html(content);
                     });
-            }, displayErrorResult);
+                }, displayErrorResult);
+            }
         });
     });
 
@@ -119,13 +172,18 @@ $(function () {
             name = $target.data("name"),
             existing = $target.data("existing");
 
-        bootbox.prompt({
-            title: "Update version requirements for all versions of your extension. Enter the Brackets version requirements as a semver range " + name,
-            value: existing,
-            callback: function (requirements) {
+        revealDialog.prompt({
+            title: "Change Requirements",
+            message: "Update version requirements for all versions of your extension. Enter the Brackets version requirements as a semver range " + name,
+            placeholder: existing,
+            onOk: function (requirements) {
+                var requirements = $("#modalInput").val();
+                console.log(requirements);
+                $('#customModal').foundation('reveal', 'close');
                 if (requirements === null) {
                     return;
                 }
+                
                 $.ajax("/package/" + name + "/changeRequirements", {
                     type: "POST",
                     data: {
@@ -134,12 +192,44 @@ $(function () {
                     }
                 }).then(function (result) {
                     displayStatus("success", name + " requirements changed to " + requirements);
-                    $.ajax("/registryList", { datatype: "html" })
-                        .done(function (content) {
-                            $(".extension-list").html(content);
-                        });
+                    $.ajax("/user-extensions")
+                    .done(function (content) {
+                        $(".extension-list").html(content);
+                    });
                 }, displayErrorResult);
             }
         });
+    });
+
+    function _searchHandler() {
+        if (!this.value) {
+            return;
+        }
+        var dynamicQuery = "?q=" + this.value.toLowerCase();
+        if (window.location.pathname.split('/').pop() !== 'search') {
+            dynamicQuery = "search" + dynamicQuery;
+        }
+        var url = [window.location.protocol, '//', window.location.host, window.location.pathname, dynamicQuery].join('');
+        window.location.href = url;
+    }
+
+    $(document).ready(function () {
+        var url = new URL(window.location.href);
+        var searchString = url.searchParams.get("q");
+        if (searchString || (typeof searchString === "string" && !searchString.length)) {
+            $("#search-registry").val(decodeURIComponent(searchString));
+        } else {
+            $(".extension-list.search-list").hide();
+        }
+        $(document).on("change", "#search-registry", _searchHandler);
+    });
+
+    $(document).on("click", ".ext-keywords li a", function () {
+        var dynamicQuery = "?q=keywords:" + encodeURIComponent($(this).text());
+        if (window.location.pathname.split('/').pop() !== 'search') {
+            dynamicQuery = "search" + dynamicQuery;
+        }
+        var url = [window.location.protocol, '//', window.location.host, window.location.pathname, dynamicQuery].join('');
+        window.location.href = url;
     });
 });

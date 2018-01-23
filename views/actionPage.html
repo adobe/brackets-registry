@@ -1,0 +1,118 @@
+<!-- Header Section -->
+<header>
+    <div class="row">
+        <div class="large-12 columns">
+            <div class="logo">
+                <a href="http://brackets.io/"><i></i>Brackets</a>
+            </div>
+
+            <div class="nav">
+                {{#if user}}
+                {{else}}
+                <div class="nav-right">
+                    <a title="Sign in via GitHub" href="/auth/github">
+                        <i class="nav-login"></i>
+                        <span>Sign in
+                        </span>
+                    </a>
+                    <div class="divider"></div>
+                </div>
+                {{/if}}
+                <div class="nav-center">
+                    <a href="http://brackets.io/contribute.html" class="contribute">Contribute</a>
+                    <a href="http://brackets.io/docs/current/modules/brackets.html">API Docs</a>
+                    <a href="https://registry.brackets.io">Extensions</a>
+                    <a href="http://blog.brackets.io">Blog</a>
+                    <a href="https://github.com/adobe/brackets/wiki/Troubleshooting">Support</a>
+                </div>
+
+                <div class="nav-icons">
+                    <div class="divider"></div>
+                    {{#if helpURL}}
+                    <a title="Help" href="{{helpURL}}">
+                        <i class="help"></i>
+                        <span>Help
+                        </span>
+                    </a>
+                    {{/if}}
+                    <a title="RSS Feed" href="/rss">
+                        <i class="rss"></i>
+                        <span>RSS Feed
+                        </span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="collapsed-menu">
+                <a><i class="hamburger"></i></a>
+            </div>
+
+            <div class="nav-user">
+                {{#if user}}
+                <a id="user">
+                    <img title="{{user}}" src="{{{userGitAvatar}}}" alt="" width="28" border="0" onerror="this.src='img/registry/github-grey.svg';">
+                    <i class="caret"></i>
+                </a>
+                <div class="nav-menu">
+                    <p  href="#">Signed in as <span>{{user}}</span></p>
+                    <div class="divider"></div>
+                    <a  href="/logout">Sign Out</a>
+                </div>
+                {{else}}
+                <div class="nav-button">
+                    <a title="Sign in via GitHub" href="/auth/github">
+                        <i class="nav-login"></i>
+                        <span>Sign In
+                        </span>
+                    </a>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    <!-- Alert Section -->
+    <div class="row" id="custom-alert">
+
+    </div>
+</header>
+
+<!-- Layout Section -->
+<section>
+	<div class="page-view">
+		<!-- Upload Section -->
+		<section>
+			<div id="content-wrapper3" class="upload-registry">
+
+				{{#if user}}
+				<div class="info">
+					<h3 class="text-center">
+						<span>Upload an extension</span>
+					</h3>
+				</div>
+				<form id="uploadForm" action="/upload" class="dropzone" method="post" enctype="multipart/form-data">
+					<div class="fallback">
+						<input type="file" name="extensionPackage" size="40">
+						<button class="btn" type="submit">Upload</button>
+						<input type="hidden" name="_csrf" value="{{csrfToken}}">
+					</div>
+				</form>
+                {{else}}
+				<p class="text-center">To upload an extension, <a href="/auth/github">sign in via GitHub</a>.</p>
+				{{/if}}
+			</div>
+		</section>
+        <!-- Extentions Section -->
+		<section>
+			<div class="container">
+                    <!-- My Registry Section -->
+				<section>
+					<div class="extension-list">
+						{{#if myRegistry}}
+							{{> registryListTemp myRegistry}}
+						{{/if}}
+					</div>
+				</section>
+			</div>
+        </section>
+    </div>
+</section>

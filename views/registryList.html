@@ -19,17 +19,17 @@
                   <br /><span class="muted ext-homepage"><a href="{{metadata.homepage}}">More Info...</a></span>
                 {{/if}}
                 {{#if canAdmin}}
-                    <div class="admin btn-group btn-group-xs">
-                        <button type="button" class="btn btn-default changeOwner" data-name="{{metadata.name}}">
-                            Change Owner
-                        </button>
-                        <button type="button" class="btn btn-default changeRequirements" data-name="{{metadata.name}}" data-existing="{{metadata.engines.brackets}}">
-                            Change Requirements
-                        </button>
-                        <button type="button" class="btn btn-default delete" data-name="{{metadata.name}}">
-                            Delete
-                        </button>
-                    </div>
+                    <div class="admin" style="margin: -12px 0;">
+						<button type="button" class="radius label changeOwner" data-name="{{metadata.name}}">
+							Change Owner
+						</button>
+						<button type="button" class="radius label changeRequirements" data-name="{{metadata.name}}" data-existing="{{metadata.engines.brackets}}">
+							Change Requirements
+						</button>
+						<button type="button" class="radius label delete" data-name="{{metadata.name}}">
+							Delete
+						</button>
+					</div>
                 {{/if}}
             </td>
             <td>

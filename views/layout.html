@@ -1,42 +1,178 @@
 <!doctype html>
-<html>
-    <head>
-        <title>Brackets Extension Registry</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="/css/bootstrap.min.css" rel="stylesheet">
-        <link href="/css/styles.css" rel="stylesheet">
-        <link href="/css/dropzone-basic.css" rel="stylesheet">
-        <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss" />
-        <meta name="csrf-token" content="{{csrfToken}}">
-    </head>
-    <body>
+<html class="no-js" lang="en">
 
-        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-            <div class="container">
-                <a class="navbar-brand" href="/"><img class="logo pull-left" src="/img/brackets-24.svg">Brackets Extension Registry</a>
-                <p class="navbar-text pull-right">
-                    {{#if user}}
-                        Signed in as {{user}} | <a href="/logout">Sign out</a>
-                    {{else}}
-                        <a href="/auth/github">Sign in via GitHub</a>
-                    {{/if}}
-                    | <a href="/rss">RSS</a>
-                    {{#if helpURL}}
-                    | <a href="{{helpURL}}">Help</a>
-                    {{/if}}
+<head>
+    <title>Brackets Extension Registry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/foundation.min.css" />
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/brackets.min.css" />
+
+    <style type="text/css">
+        .wf-loading h1,
+        .wf-loading h2,
+        .wf-loading h3,
+        .wf-loading h4,
+        .wf-loading h5,
+        .wf-loading h6,
+        .wf-loading p,
+        .wf-loading a {
+            visibility: hidden;
+        }
+
+    </style>
+    <style type="text/css">
+        body {
+            display: none;
+        }
+
+    </style>
+
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss" />
+    <meta name="csrf-token" content="{{csrfToken}}">
+
+    <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+</head>
+
+<body class="background-body">
+    {{{body}}}
+
+    <!-- Crawler Link -->
+    <section>
+        <div id="crawler" style="display:none;">
+            <a href="/registryList"></a>
+        </div>
+    </section>
+    
+    <!-- Footer Section -->
+    <footer>
+        <div class="row">
+            <div class="small-12 medium-6 large-3 columns">
+                <h5 class="logo-footer">
+                    <a href="http://brackets.io">
+                        <i></i>Brackets</a>
+                </h5>
+                <p id="footer-desc">
+                    Brackets was founded by Adobe as a community guided, open source project to push web development editors to the next level.
                 </p>
+                <p>Brackets is released under the MIT License.</p>
             </div>
-            <div id="alertspace">
+            <div class="small-12 medium-6 large-3 columns">
+                <h5>Quick Links</h5>
+                <ul>
+                    <li>
+                        <a href="https://github.com/adobe/brackets">Source Code on Github</a>
+                    </li>
+                    <li>
+                        <a href="docs/current/modules/brackets.html">API Documentation</a>
+                    </li>
+                    <li>
+                        <a href="https://ingorichter.github.io/BracketsExtensionTweetBot/">Weekly Extension Updates</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/adobe/brackets/wiki/Troubleshooting">Troubleshooting Help</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/adobe/brackets/wiki">Wiki</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="small-12 medium-6 large-3 columns">
+                <h5 id="try-it">Videos</h5>
+                <ul>
+                    <li>
+                        <a href="http://youtu.be/rvo3Mv1Z4qU" data-yt-id="rvo3Mv1Z4qU">Introducing Brackets</a>
+                    </li>
+                    <li>
+                        <a href="http://youtu.be/Nhvj1NYC3Uc" data-yt-id="Nhvj1NYC3Uc">Live Development for HTML</a>
+                    </li>
+                    <li>
+                        <a href="http://youtu.be/T6d5C3rLeFY" data-yt-id="T6d5C3rLeFY">JavaScript Debugger for Brackets</a>
+                    </li>
+                    <li>
+                        <a href="http://tutsplus.com/courses/introduction-to-brackets?utm_source=Bracketsio&utm_medium=website&utm_campaign=BracketsWebsite">Tuts+ Introduction to Brackets</a>
+                    </li>
+                    <li>
+                        <a href="https://www.youtube.com/user/CodeBrackets">Brackets Videos on Youtube</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="small-12 medium-6 large-3 columns">
+                <h5 id="contribute">Get Involved</h5>
+                <ul>
+                    <li>
+                        <a href="https://github.com/adobe/brackets/wiki/Suggest-a-Feature">Suggest a Feature</a>
+                    </li>
+                    <li>
+                        <a href="http://bit.ly/BracketsBacklog">View Backlog on Trello</a>
+                    </li>
+                    <li>
+                        <a href="https://waffle.io/adobe/brackets">Track Our Progress on Waffle</a>
+                    </li>
+                    <li>
+                        <a href="https://groups.google.com/forum/#!forum/brackets-dev">Discuss on Google Groups</a>
+                    </li>
+                    <li>
+                        <a href="http://webchat.freenode.net?channels=brackets&uio=d4">Chat on IRC at Freenode/#Brackets</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/adobe/brackets/issues">Checkout Current Issues on GitHub</a>
+                    </li>
 
+                </ul>
             </div>
         </div>
-
-        <div class="container">
-            {{{body}}}
+        <div class="row icons-footer">
+            <div class="small-6 medium-3 large-2 large-centered medium-centered small-centered columns">
+                <div class="icon-holder">
+                    <div class="small-3 medium-3 large-3 columns" title="GitHub">
+                        <a href="https://www.github.com/adobe/brackets">
+                            <i class="github"></i>
+                        </a>
+                    </div>
+                    <div class="small-3 medium-3 large-3 columns" title="Twitter">
+                        <a href="https://twitter.com/brackets">
+                            <i class="twitter"></i>
+                        </a>
+                    </div>
+                    <div class="small-3 medium-3 large-3 columns" title="Google Plus">
+                        <a href="https://plus.google.com/b/115365194873502050036/">
+                            <i class="googleplus"></i>
+                        </a>
+                    </div>
+                    <div class="small-3 medium-3 large-3 columns" title="Facebook">
+                        <a href="https://www.facebook.com/codebrackets">
+                            <i class="facebook"></i>
+                        </a>
+                    </div>
+                    <div class="clearfix"></div>
+                </div>
+            </div>
         </div>
-
-        <div class="container">
-            {{{customFooter}}}
+        <div class="row about-footer">
+            <div class="small-6 medium-3 large-2 large-centered medium-centered small-centered columns">
+                <div class="small-12 medium-12 large-12 columns">
+                    <p title="Adobe">
+                        <i class="adobe-logo"></i>
+                        <span>Part of the Adobe Family</span>
+                    </p>
+                </div>
+            </div>
         </div>
-    </body>
+    </footer>
+    
+    <script src="js/vendor/custom.modernizr.js"></script>
+    <script src="js/vendor/jquery.js"></script>
+    <script src="js/foundation.min.js"></script>
+    <script src="js/nav.js"></script>
+    <script src="js/footer.js"></script>
+    <script src="js/youtube-modal.js"></script>
+    <script src="js/dropzone.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        $(document).foundation();
+    </script>
+</body>
+
 </html>

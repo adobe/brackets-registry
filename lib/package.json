@@ -1,0 +1,8 @@
+{
+  "name": "lib",
+  "version": "1.0.0",
+  "description": "Server Side code for brackets-registry",
+  "dependencies": {
+    "numeral": "^2.0.6"
+  }
+}

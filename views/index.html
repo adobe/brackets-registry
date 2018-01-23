@@ -1,30 +1,108 @@
-<div class="container">
-    <h2>Upload an extension</h2>
-    {{#if user}}
-        <form id="uploadForm" action="/upload" class="dropzone" method="post" enctype="multipart/form-data">
-            <div class="fallback">
-                <input type="file" name="extensionPackage" size="40">
-                <button class="btn" type="submit">Upload</button>
-                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+<!-- Header Section -->
+<header>
+    <div class="row">
+        <div class="large-12 columns">
+            <div class="logo">
+                <a href="http://brackets.io"><i></i>Brackets</a>
             </div>
-        </form>
-    {{else}}
-        <p>To upload an extension, <a href="/auth/github">sign in via GitHub</a>.</p>
-    {{/if}}
-    {{#if helpURL}}
-        <p>Have questions about using the registry? Take a look at the <a href="{{helpURL}}">Help page</a>.</p>
-    {{/if}}
-    </div>
 
-<div class="container">
-    <h2>Browse extensions</h2>
-    <div class="extension-list">
-        {{> registryList}}
-    </div>
-</div>
+            <div class="nav">
+                <div class="nav-right">
+                    <a title="Upload an Extension" href="/actions">
+                        <i class="nav-upload"></i>
+                        <span>Upload an Extension</span>
+                    </a>
+                    <div class="divider"></div>
+                </div>
+                <div class="nav-center">
+                    <a href="http://brackets.io/contribute.html" class="contribute">Contribute</a>
+                    <a href="http://brackets.io/docs/current/modules/brackets.html">API Docs</a>
+                    <a href="https://registry.brackets.io">Extensions</a>
+                    <a href="http://blog.brackets.io">Blog</a>
+                    <a href="https://github.com/adobe/brackets/wiki/Troubleshooting">Support</a>
+                </div>
+            </div>
 
-<script src="//code.jquery.com/jquery-2.1.0.min.js"></script>
-<script src="/js/dropzone.js"></script>
-<script src="/js/bootstrap.min.js"></script>
-<script src="/js/bootbox.min.js"></script>
-<script src="/js/main.js"></script>
+            <div class="collapsed-menu">
+                <a><i class="hamburger"></i></a>
+            </div>
+
+            <div class="nav-user">
+                <div class="nav-button">
+                    <a title="Upload an Extension" href="/actions">
+                        <i class="nav-upload"></i>
+                        <span>Upload an Extension
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Layout Section -->
+<section>
+    <div class="page-view">
+
+        <!-- Search Section -->
+        <section>
+            <div id="container" class="top-margin">
+                <div id="hero" class="row">
+                    <div class="large-12 columns padding-none">
+                        <div class="small-8 medium-8 large-8 large-centered medium-centered small-centered columns info">
+                            <h3 class="text-center">Extensions For Brackets</h3>
+                            <input type="text" id="search-registry" placeholder="Search from 1400+ extensions">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Extentions Section -->
+        <section>
+            <div class="container">
+                <!-- Search Registry Section -->
+                <section>
+                    <div class="extension-list search-list">
+                        {{#if searchRegistry}} {{> registryListTemp searchRegistry}} {{/if}}
+                    </div>
+                </section>
+
+                <!-- Top Registry Section -->
+                <section>
+                    <div class="extension-list">
+                        {{#if mostDownloadedRegistry}} {{> registryListTemp mostDownloadedRegistry}} {{/if}}
+                    </div>
+                </section>
+
+                <!-- Trending Registry Section -->
+                <section>
+                    <div class="extension-list">
+                        {{#if trendingRegistry}} {{> registryListTemp trendingRegistry}} {{/if}}
+                    </div>
+                </section>
+
+                <!-- Recently Created Registry Section -->
+                <section>
+                    <div class="extension-list">
+                        {{#if recentlyCreatedRegistry}} {{> registryListTemp recentlyCreatedRegistry}} {{/if}}
+                    </div>
+                </section>
+
+                <!-- Recently Updated Registry Section -->
+                <section>
+                    <div class="extension-list">
+                        {{#if recentlyUpdatedRegistry}} {{> registryListTemp recentlyUpdatedRegistry}} {{/if}}
+                    </div>
+                </section>
+
+                <!-- My Registry Section -->
+                <section>
+                    <div class="extension-list">
+                        {{#if myRegistry}} {{> registryListTemp myRegistry}} {{/if}}
+                    </div>
+                </section>
+            </div>
+        </section>
+    </div>
+</section>

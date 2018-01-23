@@ -1,0 +1,3 @@
+[submodule "public/dev"]
+	path = public/dev
+	url = https://github.com/adobe/brackets-site-sass

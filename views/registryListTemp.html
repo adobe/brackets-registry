@@ -1,0 +1,90 @@
+<div id="content-wrapper1" class="reg-box top-margin">
+    {{#if list.length}}
+    <div class="row">
+    <div class="small-12 medium-12 large-12 columns category padding-none" align="left">
+        <h1>{{title}}</h1>        
+    </div>
+    <div class="clearfix"></div>
+    <div class="small-12 medium-12 large-12 large-centered medium-centered small-centered columns padding-none">
+        {{#each list}}
+            <div class="small-12 medium-6 large-6 columns padding-none">
+                <div class="box" style="margin-right:8px;">
+                    <div id="first" class="divbox1">
+                        <h2>
+                            <a href="{{metadata.homepage}}">
+                                {{#if metadata.title}}
+                                    {{metadata.title}}
+                                {{else}}
+                                    {{metadata.name}}
+                                {{/if}}
+                            </a>
+                            <span  style="font-weight:300; font-size:14px; color:#93969a">{{metadata.version}}</span>
+                        </h2>
+                    </div>
+                    <div id="second" class="divbox2" align="center">
+                        <img title="{{{authorInfo}}}" src="{{{gitAvatar}}}" alt="" width="32" border="0" onerror="this.src='img/registry/github-grey.svg';">
+                    </div>
+                    <div class="clearfix"></div>
+                    <div id="third" class="divbox1">
+                        <p>
+                            {{#if metadata.description}}
+                                <span class="muted description">{{metadata.description}}</span>
+                            {{else}}
+                                <span class="muted description">No description</span>
+                            {{/if}}
+                            {{#if metadata.keywords.length}}
+                                <span style="font-weight:bold;"> 
+                                    <br/>
+                                    <ul class="ext-keywords">
+                                    {{#each metadata.keywords}}
+                                        <li><a>{{.}}</a></li>
+                                    {{/each}}
+                                    </ul>
+                                </span>
+                            {{/if}}
+                            <span>
+                                {{#if ../actions}}
+                                    {{#if canAdmin}}
+                                        <div class="admin" style="margin: -12px 0;">
+                                            <button type="button" class="radius label changeOwner" data-name="{{metadata.name}}">
+                                                Change Owner
+                                            </button>
+                                            <button type="button" class="radius label changeRequirements" data-name="{{metadata.name}}" data-existing="{{metadata.engines.brackets}}">
+                                                Change Requirements
+                                            </button>
+                                            <button type="button" class="radius label delete" data-name="{{metadata.name}}">
+                                                Delete
+                                            </button>
+                                        </div>
+                                    {{/if}}
+                                {{/if}}
+                            </span>
+                        </p>
+                    </div>
+                    <div id="fourth" class="divbox2" align="center;">
+                        <div align="center">
+							<a href="{{{formatDownloadURL ../../repositoryBaseURL metadata.name metadata.version}}}">
+                                <img id="d-icon" src="img/registry/download.svg" style=" margin-right:2px" alt="GITHUB" width="30" height="30" border="0">
+                            </a>
+                            <p style="font-size:12px;">
+                                    {{totalDownloads}}
+                            </p>
+                        </div>
+                    </div>            
+                    <div style="clear:both;"></div> 
+                </div>
+            </div>
+        {{/each}}
+    </div>
+    </div>
+    {{else}}
+		{{#if search}}
+			<div class="small-8 medium-8 large-8 large-centered medium-centered small-centered columns info">
+                <h3 class="text-center">No Matching Extensions</h3>
+            </div>
+		{{/if}}
+	{{/if}}
+</div>
+{{#if last}}
+	<div id="content-wrapper1" style="margin-bottom:50px;"></div>
+{{/if}}

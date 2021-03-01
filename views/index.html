@@ -1,4 +1,8 @@
-<div class="container">
+<div class="alert alert-warning">
+    On September 1, 2021, Adobe will end support for Brackets. If you would like to continue using, maintaining, and improving Brackets, you may fork the project on <a href="https://github.com/adobe/brackets" i18n="nav.GitHub">GitHub</a>. Through Adobe’s partnership with Microsoft, we encourage users to migrate to <a href='https://code.visualstudio.com/'>Visual Studio Code</a>, Microsoft’s free code editor built on open source.
+</div>
+
+<div class="container" style="display:none">
     <h2>Upload an extension</h2>
     {{#if user}}
         <form id="uploadForm" action="/upload" class="dropzone" method="post" enctype="multipart/form-data">
@@ -14,7 +18,7 @@
     {{#if helpURL}}
         <p>Have questions about using the registry? Take a look at the <a href="{{helpURL}}">Help page</a>.</p>
     {{/if}}
-    </div>
+</div>
 
 <div class="container">
     <h2>Browse extensions</h2>
